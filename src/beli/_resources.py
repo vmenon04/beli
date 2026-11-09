@@ -63,10 +63,6 @@ class Rankings(SyncResource):
     def count_this_year(self, year: int | None = None, *, user: str | None = None) -> int:
         return self._send(ep.ranked_this_year(user, year))
 
-    def delete(self, ranking_id: int) -> Any:
-        """Remove a ranking (Beli soft-deletes it). This writes to your account."""
-        return self._send(ep.delete_ranking(ranking_id))
-
 
 class Scores(SyncResource):
     def list(self, *, user: str | None = None) -> builtins.list[Score]:
@@ -89,10 +85,6 @@ class Notes(SyncResource):
         matching = [n for n in notes if n.business == business_id]
         return matching[-1].value if matching else None
 
-    def set(self, business_id: int, text: str) -> Any:
-        """Write or replace your note on a place. This writes to your account."""
-        return self._send(ep.set_note(business_id, text))
-
 
 class Photos(SyncResource):
     def list(self, *, user: str | None = None) -> builtins.list[Photo]:
@@ -104,17 +96,6 @@ class Bookmarks(SyncResource):
 
     def list(self, category: str = "RES", *, user: str | None = None) -> builtins.list[Bookmark]:
         return self._send(ep.bookmarks(category, user))
-
-    def status(self, business_id: int) -> Any:
-        return self._send(ep.bookmark_status(business_id))
-
-    def add(self, business_id: int, category: str = "RES") -> Any:
-        """Bookmark a place. Idempotent. This writes to your account."""
-        return self._send(ep.add_bookmark(business_id, category))
-
-    def remove(self, business_id: int, category: str = "RES") -> Any:
-        """Remove a bookmark. This writes to your account."""
-        return self._send(ep.remove_bookmark(business_id, category))
 
 
 class Guides(SyncResource):

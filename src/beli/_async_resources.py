@@ -61,10 +61,6 @@ class AsyncRankings(AsyncResource):
     async def count_this_year(self, year: int | None = None, *, user: str | None = None) -> int:
         return await self._send(ep.ranked_this_year(user, year))
 
-    async def delete(self, ranking_id: int) -> Any:
-        """Remove a ranking (Beli soft-deletes it). This writes to your account."""
-        return await self._send(ep.delete_ranking(ranking_id))
-
 
 class AsyncScores(AsyncResource):
     async def list(self, *, user: str | None = None) -> builtins.list[Score]:
@@ -87,10 +83,6 @@ class AsyncNotes(AsyncResource):
         matching = [n for n in notes if n.business == business_id]
         return matching[-1].value if matching else None
 
-    async def set(self, business_id: int, text: str) -> Any:
-        """Write or replace your note on a place. This writes to your account."""
-        return await self._send(ep.set_note(business_id, text))
-
 
 class AsyncPhotos(AsyncResource):
     async def list(self, *, user: str | None = None) -> builtins.list[Photo]:
@@ -104,17 +96,6 @@ class AsyncBookmarks(AsyncResource):
         self, category: str = "RES", *, user: str | None = None
     ) -> builtins.list[Bookmark]:
         return await self._send(ep.bookmarks(category, user))
-
-    async def status(self, business_id: int) -> Any:
-        return await self._send(ep.bookmark_status(business_id))
-
-    async def add(self, business_id: int, category: str = "RES") -> Any:
-        """Bookmark a place. Idempotent. This writes to your account."""
-        return await self._send(ep.add_bookmark(business_id, category))
-
-    async def remove(self, business_id: int, category: str = "RES") -> Any:
-        """Remove a bookmark. This writes to your account."""
-        return await self._send(ep.remove_bookmark(business_id, category))
 
 
 class AsyncGuides(AsyncResource):

@@ -132,20 +132,14 @@ class Beli:
         """Category codes enabled on the account (``RES``, ``BAR``, ...)."""
         return self._transport.send(ep.categories())
 
-    def request(
-        self,
-        method: str,
-        path: str,
-        *,
-        params: dict[str, Any] | None = None,
-        json: Any = None,
-        host: str | None = None,
+    def get(
+        self, path: str, *, params: dict[str, Any] | None = None, host: str | None = None
     ) -> Any:
-        """Call any endpoint from beli-api-spec. ``{me}`` in the path or a param value is your user id.
+        """GET any endpoint from beli-api-spec. ``{me}`` in the path or a param value is your user id.
 
-        beli.request("GET", "/api/user-field-count/{me}/RANK/")
+        beli.get("/api/user-field-count/{me}/RANK/")
         """
-        return self._transport.send(ep.raw(method, path, params, json, host))
+        return self._transport.send(ep.raw_get(path, params, host))
 
     def export(
         self,
@@ -266,16 +260,10 @@ class AsyncBeli:
     async def categories(self) -> list[Category]:
         return await self._transport.send(ep.categories())
 
-    async def request(
-        self,
-        method: str,
-        path: str,
-        *,
-        params: dict[str, Any] | None = None,
-        json: Any = None,
-        host: str | None = None,
+    async def get(
+        self, path: str, *, params: dict[str, Any] | None = None, host: str | None = None
     ) -> Any:
-        return await self._transport.send(ep.raw(method, path, params, json, host))
+        return await self._transport.send(ep.raw_get(path, params, host))
 
     async def export(
         self,

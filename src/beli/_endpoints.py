@@ -1,4 +1,6 @@
-"""One builder per endpoint. Each returns a :class:`Request` that either client can send.
+"""One builder per endpoint. All are reads: this package never changes an account.
+
+ Each returns a :class:`Request` that either client can send.
 
 Paths and parameters come from beli-api-spec (Beli app 10.2.0). Endpoints marked
 "verified" there answered on a live account; the rest are from app code only.
@@ -127,10 +129,6 @@ def rankings(category: str, user: str | None) -> Request[list[Ranking]]:
     )
 
 
-def delete_ranking(ranking_id: int) -> Request[Any]:
-    return Request("PUT", f"/api/delete-ranking/{ME}/{ranking_id}/", json={})
-
-
 def scores(user: str | None) -> Request[list[Score]]:
     return Request("GET", f"/api/user-scores/{user_param(user)}/", parse=list_of(Score))
 
@@ -173,14 +171,6 @@ def notes(user: str | None, business_id: int | None) -> Request[list[Note]]:
     return Request("GET", "/api/datauserbusinesstext-sparse/", params=params, parse=parse)
 
 
-def set_note(business_id: int, text: str) -> Request[Any]:
-    return Request(
-        "POST",
-        "/api/data-user-business-text-new/",
-        json={"user": ME, "business": business_id, "field_name": NOTES_FIELD, "value": text},
-    )
-
-
 def photos(user: str | None) -> Request[list[Photo]]:
     return Request(
         "GET", "/api/user-business-photos/", params={"user": user_param(user)}, parse=list_of(Photo)
@@ -204,27 +194,6 @@ def bookmarks(category: str, user: str | None) -> Request[list[Bookmark]]:
         "/api/get-bookmark/",
         params={"user": user_param(user), "category": category},
         parse=parse,
-    )
-
-
-def bookmark_status(business_id: int) -> Request[Any]:
-    return Request("GET", f"/api/bookmark-status/{ME}/{business_id}/")
-
-
-def add_bookmark(business_id: int, category: str) -> Request[Any]:
-    return Request(
-        "POST",
-        "/api/add-bookmark/",
-        json={"user_id": ME, "business_id": business_id, "category": category},
-    )
-
-
-def remove_bookmark(business_id: int, category: str) -> Request[Any]:
-    return Request(
-        "PUT",
-        "/api/remove-bookmark/",
-        params={"supports_guide_item_cleanup": "true"},
-        json={"user_id": ME, "business_id": business_id, "category": category},
     )
 
 
@@ -316,9 +285,7 @@ def trending(category: str) -> Request[list[Any]]:
     )
 
 
-def raw(
-    method: str, path: str, params: dict[str, Any] | None, json: Any, host: str | None
-) -> Request[Any]:
+def raw_get(path: str, params: dict[str, Any] | None, host: str | None) -> Request[Any]:
     if not path.startswith("/"):
         path = "/" + path
     if not path.endswith("/"):
@@ -326,7 +293,6 @@ def raw(
     path = path.replace("{me}", ME)
     if params:
         params = {k: ME if v == "{me}" else v for k, v in params.items()}
-    kwargs: dict[str, Any] = {"params": params, "json": json}
     if host:
-        kwargs["host"] = host
-    return Request(method.upper(), path, **kwargs)
+        return Request("GET", path, params=params, host=host)
+    return Request("GET", path, params=params)

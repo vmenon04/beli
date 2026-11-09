@@ -30,6 +30,12 @@ ME = "__BELI_ME__"
 RETRY_STATUSES = frozenset({429, 502, 503, 504})
 
 
+def _check_read_only(request: Request[Any]) -> None:
+    """Only login and token refresh may POST. Everything sent with your token is a GET."""
+    if request.auth and request.method != "GET":
+        raise ValueError(f"beli is read-only; refusing {request.method} {request.path}")
+
+
 def _identity(data: Any) -> Any:
     return data
 
@@ -224,6 +230,7 @@ class SyncTransport:
         return self.config.tokens.user_id
 
     def send(self, request: Request[T]) -> T:
+        _check_read_only(request)
         if request.auth and request.needs_user:
             request = request.resolve(self.user_id())
         reauthed = False
@@ -313,6 +320,7 @@ class AsyncTransport:
         return self.config.tokens.user_id
 
     async def send(self, request: Request[T]) -> T:
+        _check_read_only(request)
         if request.auth and request.needs_user:
             request = request.resolve(await self.user_id())
         reauthed = False

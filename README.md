@@ -2,7 +2,7 @@
 
 Unofficial Python client and exporter for [Beli](https://beliapp.com), the restaurant ranking app.
 
-Beli has no public API and no export button. This package talks to the private API the app uses, so you can pull your own rankings, scores, notes, visit dates, photos, Want to Try list and guides into JSON, CSV or SQLite, or script against them in Python.
+Beli has no public API and no export button. This package talks to the private API the app uses, so you can read your own rankings, scores, notes, visit dates, photos, Want to Try list and guides into JSON, CSV or SQLite, or script against them in Python.
 
 [![CI](https://github.com/vmenon04/beli/actions/workflows/ci.yml/badge.svg)](https://github.com/vmenon04/beli/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/beli)](https://pypi.org/project/beli/)
@@ -79,21 +79,21 @@ async with AsyncBeli.from_session() as beli:
 
 | Resource | Methods |
 |---|---|
-| `beli.rankings` | `list(category)`, `all()`, `visit_dates(business_id)`, `count()`, `count_this_year()`, `delete(ranking_id)` |
-| `beli.notes` | `list()`, `get(business_id)`, `set(business_id, text)` |
+| `beli.rankings` | `list(category)`, `all()`, `visit_dates(business_id)`, `count()`, `count_this_year()` |
+| `beli.notes` | `list()`, `get(business_id)` |
 | `beli.scores` | `list()`, `averages()` (by city, country, cuisine) |
 | `beli.photos` | `list()` |
-| `beli.bookmarks` | `list(category)`, `status(id)`, `add(id)`, `remove(id)` |
+| `beli.bookmarks` | `list(category)` |
 | `beli.guides` | `list()`, `items()`, `get(guide_id)` |
 | `beli.users` | `get(user_id)`, `followers()`, `following()`, `streak()` |
 | `beli.places` | `search(term, city=...)`, `hours(business_id)`, `trending(category)` |
-| `beli` | `me()`, `categories()`, `export()`, `request(method, path)` |
+| `beli` | `me()`, `categories()`, `export()`, `get(path)` |
 
-Methods that read a user's data take `user=` to read someone else's (if their profile is visible to you). Anything else in the [433-operation spec](https://github.com/horse-3903/beli-api-spec) is one `beli.request(...)` away.
+Methods that read a user's data take `user=` to read someone else's (if their profile is visible to you). Anything else in the [433-operation spec](https://github.com/horse-3903/beli-api-spec) is one `beli.get(...)` away, as long as it's a GET.
 
 Responses are pydantic models. Beli adds fields often, so unknown fields are kept in `model.model_extra` instead of being dropped.
 
-Methods that change your account are labeled in their docstrings: `notes.set`, `bookmarks.add/remove`, `rankings.delete`.
+**Read-only.** Nothing in this package changes your account. The only requests that aren't GETs are login and token refresh, and the transport refuses anything else. Writes (posting reviews, bookmarking) may come later as an explicit opt-in.
 
 ## Authentication
 

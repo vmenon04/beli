@@ -123,7 +123,7 @@ def _parse_params(pairs: list[str]) -> dict[str, Any]:
 
 def cmd_get(args: argparse.Namespace) -> int:
     with _client(args) as beli:
-        data = beli.request("GET", args.path, params=_parse_params(args.param))
+        data = beli.get(args.path, params=_parse_params(args.param))
     print(json.dumps(data, indent=2, ensure_ascii=False))
     return 0
 

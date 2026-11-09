@@ -151,19 +151,27 @@ def test_400_not_retried(api: respx.MockRouter) -> None:
     assert route.call_count == 1
 
 
-def test_empty_write_body_is_none(api: respx.MockRouter) -> None:
-    route = api.post(f"{HOST_API}/api/add-bookmark/").respond(200, content=b"")
-    assert client().bookmarks.add(42) is None
-    assert json.loads(route.calls[0].request.content) == {
-        "user_id": USER_ID,
-        "business_id": 42,
-        "category": "RES",
-    }
+def test_read_only(api: respx.MockRouter) -> None:
+    from beli._transport import Request
+
+    beli = client()
+    for resource, name in [
+        (beli.notes, "set"),
+        (beli.bookmarks, "add"),
+        (beli.bookmarks, "remove"),
+        (beli.rankings, "delete"),
+    ]:
+        assert not hasattr(resource, name)
+    with pytest.raises(ValueError, match="read-only"):
+        beli._transport.send(Request("POST", "/api/add-bookmark/", json={}))
+    assert not any(
+        c.request.method != "GET" and "token" not in c.request.url.path for c in api.calls
+    )
 
 
-def test_raw_request(api: respx.MockRouter) -> None:
+def test_raw_get(api: respx.MockRouter) -> None:
     route = api.get(f"{HOST_API}/api/user/streak/").respond(json={"result": 4})
-    data = client().request("GET", "api/user/streak", params={"user": "{me}"})
+    data = client().get("api/user/streak", params={"user": "{me}"})
     assert data == {"result": 4}
     assert route.calls[0].request.url.params["user"] == USER_ID
 
