@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "beli"
+dynamic = ["version"]
+description = "Unofficial Python client and exporter for the Beli restaurant ranking app"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Vasu Menon" }]
+requires-python = ">=3.10"
+dependencies = ["httpx>=0.27,<1", "pydantic>=2.6,<3"]
+keywords = ["beli", "restaurants", "api", "client", "export", "unofficial"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/vmenon04/beli"
+Issues = "https://github.com/vmenon04/beli/issues"
+
+[project.scripts]
+beli = "beli.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "respx>=0.21", "ruff>=0.6", "mypy>=1.10"]
+
+[tool.hatch.version]
+path = "src/beli/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/beli"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-m 'not live'"
+markers = ["live: hits the real Beli API; needs BELI_EMAIL/BELI_PASSWORD or a saved session"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+files = ["src/beli"]
+plugins = ["pydantic.mypy"]
