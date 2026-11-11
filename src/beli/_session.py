@@ -265,9 +265,13 @@ class Session:
         tokens: Tokens = yield Exclusive(self._login())
         return tokens
 
-    def access_token(self, *, force: bool = False) -> Flow[str]:
-        """A usable access token, refreshing or logging in if needed."""
-        token: str = yield Exclusive(self._fresh_token(force))
+    def access_token(self, *, rejected: str | None = None) -> Flow[str]:
+        """A usable access token, refreshing or logging in if needed.
+
+        ``rejected`` is a token the API just answered 401 to. It is replaced
+        even if it has not expired, unless another caller already replaced it.
+        """
+        token: str = yield Exclusive(self._fresh_token(rejected))
         return token
 
     def user_id(self) -> Flow[str]:
@@ -299,7 +303,7 @@ class Session:
             response: httpx.Response = reply
             if response.status_code == 401 and not reauthed:
                 reauthed = True
-                yield from self.access_token(force=True)
+                yield from self.access_token(rejected=token)
                 continue
             if response.status_code in RETRY_STATUSES and attempt < self.config.max_retries:
                 yield Sleep(retry_delay(response, attempt))
@@ -371,9 +375,13 @@ class Session:
         self.config.store()
         return self.config.tokens
 
-    def _fresh_token(self, force: bool) -> Flow[str]:
+    def _fresh_token(self, rejected: str | None) -> Flow[str]:
+        # Holding the auth lock: only one caller at a time gets past this point,
+        # so the checks below see the result of whoever went first. Several
+        # threads that find the token expired, or that were all refused with
+        # the same token, produce one refresh between them.
         tokens = self.config.tokens
-        if not force and not is_expired(tokens.access):
+        if tokens.access != rejected and not is_expired(tokens.access):
             return tokens.access
         if not is_expired(tokens.refresh, skew=0):
             response = yield from self._auth_post(
@@ -381,9 +389,10 @@ class Session:
             )
             if response.status_code == 200:
                 data = response.json()
-                tokens.access = data["access"]
-                if new_refresh := data.get("refresh"):
-                    tokens.refresh = new_refresh
+                # Swap the pair in one assignment so a reader never sees half of it.
+                self.config.tokens = Tokens(
+                    access=data["access"], refresh=data.get("refresh") or tokens.refresh
+                )
                 self.config.store()
-                return tokens.access
+                return self.config.tokens.access
         return (yield from self._login()).access
