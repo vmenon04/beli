@@ -1,8 +1,8 @@
 # Changelog
 
-Versions follow `0.MINOR.PATCH` while the package is pre-1.0: a minor bump can change behaviour for existing users, a patch bump does not.
+Versions follow `0.MINOR.PATCH` while the package is pre-1.0: a minor bump can change behavior for existing users, a patch bump does not.
 
-## 0.2.0 (unreleased)
+## 0.2.0
 
 ### Changed
 
