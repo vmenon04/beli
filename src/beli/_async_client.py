@@ -35,9 +35,17 @@ PathLike = str | os.PathLike[str]
 class AsyncBeli:
     """Client for the Beli app's private API.
 
-    Credentials are taken from the arguments, then ``BELI_EMAIL`` / ``BELI_PHONE``
-    / ``BELI_PASSWORD`` / ``BELI_REFRESH_TOKEN``, then ``session_file`` if given.
-    Nothing touches the network until the first call.
+    Credentials come from the first of these that has any:
+
+    1. the arguments (``email`` or ``phone`` with ``password``, ``refresh_token``,
+       ``access_token``);
+    2. ``session_file``, if it holds a token that has not expired;
+    3. the environment: ``BELI_REFRESH_TOKEN``, or ``BELI_PASSWORD`` with
+       ``BELI_EMAIL`` or ``BELI_PHONE``.
+
+    One source is used, never a mix. Which one is logged at debug level on the
+    ``beli`` logger. New tokens are saved to ``session_file`` whatever the
+    source. Nothing touches the network until the first call.
 
     Before the first request to the main API the client asks Beli which hosts
     to use (``/api/api-hosts/``) and remembers the answer for its lifetime. If

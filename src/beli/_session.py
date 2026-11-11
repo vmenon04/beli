@@ -30,7 +30,7 @@ from typing import Any, Generic, TypeVar
 
 import httpx
 
-from ._auth import Tokens, is_expired, save_tokens
+from ._auth import Tokens, is_expired, load_tokens, save_tokens
 from ._constants import (
     DEFAULT_USER_AGENT,
     DISCOVERED_HOSTS,
@@ -119,6 +119,63 @@ the ``yield``, so a plan can decide that a part is optional.
 """
 
 
+@dataclass(frozen=True)
+class Credentials:
+    source: str
+    email: str | None = None
+    phone: str | None = None
+    password: str | None = None
+    tokens: Tokens = field(default_factory=Tokens)
+
+
+def find_credentials(
+    *,
+    email: str | None = None,
+    phone: str | None = None,
+    password: str | None = None,
+    access_token: str | None = None,
+    refresh_token: str | None = None,
+    session_file: Path | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> Credentials:
+    """Choose where credentials come from. The first source that has any wins outright.
+
+    1. Constructor arguments, if any credential argument was passed.
+    2. The session file, if one was named and it holds a token that has not expired.
+    3. The environment: ``BELI_REFRESH_TOKEN``, or ``BELI_PASSWORD`` with
+       ``BELI_EMAIL`` or ``BELI_PHONE``.
+
+    Sources are never mixed: an email argument is not completed with
+    ``BELI_PASSWORD``, and a session file is not backed up by a password from
+    the environment. The session file is still where new tokens are saved,
+    whichever source they came from.
+    """
+    env = os.environ if environ is None else environ
+    if email or phone or password or access_token or refresh_token:
+        return Credentials(
+            "constructor arguments",
+            email or None,
+            phone or None,
+            password or None,
+            Tokens(access=access_token or "", refresh=refresh_token or ""),
+        )
+    if session_file is not None:
+        stored = load_tokens(session_file)
+        if stored is None:
+            log.debug("credentials: no session file at %s", session_file)
+        elif is_expired(stored.refresh, skew=0) and is_expired(stored.access):
+            log.debug("credentials: the session in %s has expired", session_file)
+        else:
+            return Credentials(f"session file {session_file}", tokens=stored)
+    env_email, env_phone = env.get("BELI_EMAIL") or None, env.get("BELI_PHONE") or None
+    env_password, env_refresh = env.get("BELI_PASSWORD") or None, env.get("BELI_REFRESH_TOKEN", "")
+    if env_refresh or (env_password and (env_email or env_phone)):
+        return Credentials(
+            "environment variables", env_email, env_phone, env_password, Tokens(refresh=env_refresh)
+        )
+    return Credentials("nothing")
+
+
 @dataclass
 class Config:
     email: str | None = None
@@ -126,6 +183,7 @@ class Config:
     password: str | None = None
     tokens: Tokens = field(default_factory=Tokens)
     session_file: Path | None = None
+    source: str = "nothing"
     min_interval: float = 1.0
     max_retries: int = 4
     timeout: float = 30.0
@@ -148,23 +206,23 @@ class Config:
         user_agent: str | None,
         discover_hosts: bool = True,
     ) -> Config:
-        from ._auth import load_tokens
-
         path = Path(session_file).expanduser() if session_file is not None else None
-        tokens = Tokens(access=access_token or "", refresh=refresh_token or "")
-        if not (tokens.access or tokens.refresh):
-            env_refresh = os.environ.get("BELI_REFRESH_TOKEN", "")
-            stored = load_tokens(path) if path else None
-            if env_refresh:
-                tokens = Tokens(refresh=env_refresh)
-            elif stored:
-                tokens = stored
-        return cls(
-            email=email or os.environ.get("BELI_EMAIL") or None,
-            phone=phone or os.environ.get("BELI_PHONE") or None,
-            password=password or os.environ.get("BELI_PASSWORD") or None,
-            tokens=tokens,
+        found = find_credentials(
+            email=email,
+            phone=phone,
+            password=password,
+            access_token=access_token,
+            refresh_token=refresh_token,
             session_file=path,
+        )
+        log.debug("credentials: using %s", found.source)
+        return cls(
+            email=found.email,
+            phone=found.phone,
+            password=found.password,
+            tokens=found.tokens,
+            session_file=path,
+            source=found.source,
             min_interval=min_interval,
             max_retries=max_retries,
             timeout=timeout,
@@ -182,8 +240,8 @@ class Config:
     def login_body(self) -> dict[str, str]:
         if not self.password or not (self.email or self.phone):
             raise AuthenticationError(
-                "No usable session. Pass email (or phone) and password, a refresh_token, "
-                "or run `beli login`."
+                f"No usable session (credentials came from {self.source}). Pass email (or "
+                "phone) and password, a refresh_token, or run `beli login`."
             )
         body = {"password": self.password}
         if self.email:
