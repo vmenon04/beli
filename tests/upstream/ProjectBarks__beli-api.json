@@ -1,0 +1,383 @@
+{
+  "source": "https://raw.githubusercontent.com/ProjectBarks/beli-api/main/openapi/beli.bundled.yaml",
+  "endpoints": {
+    "POST /api/token/": {
+      "path": "/api/token/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.access": [
+          "string"
+        ],
+        "$.refresh": [
+          "string"
+        ]
+      }
+    },
+    "POST /api/token/refresh/": {
+      "path": "/api/token/refresh/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.access": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/api-hosts/": {
+      "path": null
+    },
+    "GET /api/user/logged-in/": {
+      "path": "/api/user/logged-in/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/user/member/": {
+      "path": "/api/user/member/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/user-setting/": {
+      "path": "/api/user-setting/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/user-field-count/{user}/RANK/": {
+      "path": "/api/user-field-count/{uuid}/RANK/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ]
+      }
+    },
+    "GET /api/count-ranked-this-year/{user}/": {
+      "path": "/api/count-ranked-this-year/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ]
+      }
+    },
+    "GET /api/app-rank/{user}/": {
+      "path": "/api/app-rank/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ]
+      }
+    },
+    "GET /api/user/streak/": {
+      "path": "/api/user/streak/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ]
+      }
+    },
+    "GET /api/get-ranking/": {
+      "path": "/api/get-ranking/",
+      "required": [
+        "header:Origin",
+        "query:category",
+        "query:user"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/user-scores/{user}/": {
+      "path": "/api/user-scores/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/score-average/{user}/ALL/": {
+      "path": "/api/score-average/{uuid}/ALL/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ]
+      }
+    },
+    "GET /api/visit-dates-on-business/{user}/{id}/": {
+      "path": "/api/visit-dates-on-business/{uuid}/{id}/",
+      "required": [
+        "header:Origin",
+        "path:id",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/datauserbusinesstext-sparse/": {
+      "path": "/api/datauserbusinesstext-sparse/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/user-business-photos/": {
+      "path": "/api/user-business-photos/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/get-bookmark/": {
+      "path": "/api/get-bookmark/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/user-guide/": {
+      "path": "/api/user-guide/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/user-guide-items/": {
+      "path": "/api/user-guide-items/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/user-guide-list-view/": {
+      "path": null
+    },
+    "GET /api/followers/{user}/": {
+      "path": "/api/followers/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/following/{user}/": {
+      "path": "/api/following/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/search-app/": {
+      "path": "/api/search-app/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ]
+      }
+    },
+    "GET /api/business-hours/": {
+      "path": null
+    },
+    "GET /api/trending/{user}/": {
+      "path": "/api/trending/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    }
+  }
+}

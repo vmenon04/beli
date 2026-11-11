@@ -33,7 +33,14 @@ Issues = "https://github.com/vmenon04/beli/issues"
 beli = "beli.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8", "pytest-asyncio>=0.23", "respx>=0.21", "ruff>=0.6", "mypy>=1.10"]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "respx>=0.21",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "pyyaml>=6",  # scripts/check_upstream.py reads a YAML spec
+]
 
 [tool.hatch.version]
 path = "src/beli/_version.py"

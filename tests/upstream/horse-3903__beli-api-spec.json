@@ -1,0 +1,2683 @@
+{
+  "source": "https://raw.githubusercontent.com/horse-3903/beli-api-spec/main/beli-openapi.json",
+  "endpoints": {
+    "POST /api/token/": {
+      "path": "/api/token/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.access": [
+          "string"
+        ],
+        "$.refresh": [
+          "string"
+        ]
+      }
+    },
+    "POST /api/token/refresh/": {
+      "path": "/api/token/refresh/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.access": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/api-hosts/": {
+      "path": "/api/api-hosts/",
+      "required": [],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.activityHost": [
+          "string"
+        ],
+        "$.aiSearchHost": [
+          "string"
+        ],
+        "$.apiHost": [
+          "string"
+        ],
+        "$.defaultRetriesGet": [
+          "number"
+        ],
+        "$.defaultRetriesPost": [
+          "number"
+        ],
+        "$.defaultRetriesPut": [
+          "number"
+        ],
+        "$.photoHost": [
+          "string"
+        ],
+        "$.popupsHost": [
+          "string"
+        ],
+        "$.priorityHost": [
+          "string"
+        ],
+        "$.profileHost": [
+          "string"
+        ],
+        "$.recsHost": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/user/logged-in/": {
+      "path": "/api/user/logged-in/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.count": [
+          "number"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].badge": [
+          "null"
+        ],
+        "$.results[].bio": [
+          "null"
+        ],
+        "$.results[].company": [
+          "null"
+        ],
+        "$.results[].company_referral_link": [
+          "null"
+        ],
+        "$.results[].contacts_permission": [
+          "boolean"
+        ],
+        "$.results[].contacts_permission_status": [
+          "string"
+        ],
+        "$.results[].created_dt": [
+          "string"
+        ],
+        "$.results[].device": [
+          "string"
+        ],
+        "$.results[].email": [
+          "string"
+        ],
+        "$.results[].first_name": [
+          "string"
+        ],
+        "$.results[].full_name": [
+          "string"
+        ],
+        "$.results[].has_personalized_recs": [
+          "boolean"
+        ],
+        "$.results[].has_supper_club": [
+          "boolean"
+        ],
+        "$.results[].has_vip": [
+          "boolean"
+        ],
+        "$.results[].home_city": [
+          "string"
+        ],
+        "$.results[].home_valid_city_id": [
+          "number"
+        ],
+        "$.results[].id": [
+          "string"
+        ],
+        "$.results[].instagram_url": [
+          "null"
+        ],
+        "$.results[].last_name": [
+          "string"
+        ],
+        "$.results[].location_permission": [
+          "boolean"
+        ],
+        "$.results[].lock_scores": [
+          "boolean"
+        ],
+        "$.results[].new": [
+          "boolean"
+        ],
+        "$.results[].notification_permission": [
+          "boolean"
+        ],
+        "$.results[].phone_no": [
+          "string"
+        ],
+        "$.results[].photo": [
+          "null"
+        ],
+        "$.results[].photo_permission": [
+          "boolean"
+        ],
+        "$.results[].photo_permission_status": [
+          "string"
+        ],
+        "$.results[].profile_photo": [
+          "string"
+        ],
+        "$.results[].public": [
+          "boolean"
+        ],
+        "$.results[].qr_code": [
+          "string"
+        ],
+        "$.results[].referral_link": [
+          "string"
+        ],
+        "$.results[].referrer": [
+          "string"
+        ],
+        "$.results[].reservation_priority": [
+          "number"
+        ],
+        "$.results[].reservation_priority_points": [
+          "number"
+        ],
+        "$.results[].sc_nominations": [
+          "number"
+        ],
+        "$.results[].school": [
+          "null"
+        ],
+        "$.results[].school_badge": [
+          "null"
+        ],
+        "$.results[].school_grad_year": [
+          "null"
+        ],
+        "$.results[].school_leaderboard_access": [
+          "boolean"
+        ],
+        "$.results[].school_referral_link": [
+          "null"
+        ],
+        "$.results[].sessions": [
+          "number"
+        ],
+        "$.results[].status": [
+          "string"
+        ],
+        "$.results[].tiktok_url": [
+          "null"
+        ],
+        "$.results[].username": [
+          "string"
+        ],
+        "$.results[].vip_nominations": [
+          "number"
+        ]
+      }
+    },
+    "GET /api/user/member/": {
+      "path": "/api/user/member/",
+      "required": [
+        "header:Origin",
+        "query:id"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.count": [
+          "number"
+        ],
+        "$.next": [
+          "null"
+        ],
+        "$.previous": [
+          "null"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].company": [
+          "null"
+        ],
+        "$.results[].created_dt": [
+          "string"
+        ],
+        "$.results[].first_name": [
+          "string"
+        ],
+        "$.results[].full_name": [
+          "string"
+        ],
+        "$.results[].has_supper_club": [
+          "boolean"
+        ],
+        "$.results[].has_vip": [
+          "boolean"
+        ],
+        "$.results[].id": [
+          "string"
+        ],
+        "$.results[].instagram_url": [
+          "null"
+        ],
+        "$.results[].is_playlist_eligible": [
+          "boolean"
+        ],
+        "$.results[].last_name": [
+          "string"
+        ],
+        "$.results[].photo": [
+          "null"
+        ],
+        "$.results[].profile_photo": [
+          "string"
+        ],
+        "$.results[].public": [
+          "boolean"
+        ],
+        "$.results[].school": [
+          "null"
+        ],
+        "$.results[].tiktok_url": [
+          "null"
+        ],
+        "$.results[].username": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/user-setting/": {
+      "path": "/api/user-setting/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.categories": [
+          "array"
+        ],
+        "$.categories[]": [
+          "object"
+        ],
+        "$.categories[].code": [
+          "string"
+        ],
+        "$.categories[].display": [
+          "string"
+        ],
+        "$.categories[].icon": [
+          "string"
+        ],
+        "$.categories[].singular": [
+          "string"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].end_dt": [
+          "null"
+        ],
+        "$.results[].field": [
+          "object"
+        ],
+        "$.results[].field.category": [
+          "string"
+        ],
+        "$.results[].field.display": [
+          "string"
+        ],
+        "$.results[].field.id": [
+          "number"
+        ],
+        "$.results[].field.is_filter": [
+          "null"
+        ],
+        "$.results[].field.name": [
+          "string"
+        ],
+        "$.results[].field.table": [
+          "string"
+        ],
+        "$.results[].start_dt": [
+          "string"
+        ],
+        "$.results[].user": [
+          "string"
+        ],
+        "$.results[].value": [
+          "boolean"
+        ]
+      }
+    },
+    "GET /api/user-field-count/{user}/RANK/": {
+      "path": "/api/user-field-count/{uuid}/RANK/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "number"
+        ]
+      }
+    },
+    "GET /api/count-ranked-this-year/{user}/": {
+      "path": "/api/count-ranked-this-year/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "number"
+        ]
+      }
+    },
+    "GET /api/app-rank/{user}/": {
+      "path": "/api/app-rank/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/user/streak/": {
+      "path": "/api/user/streak/",
+      "required": [
+        "header:Origin",
+        "query:has_new_streak_share_page",
+        "query:user"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.photo_data": [
+          "object"
+        ],
+        "$.photo_data.field_name": [
+          "string"
+        ],
+        "$.photo_data.photo": [
+          "string"
+        ],
+        "$.result": [
+          "number"
+        ]
+      }
+    },
+    "GET /api/get-ranking/": {
+      "path": "/api/get-ranking/",
+      "required": [
+        "header:Origin",
+        "query:category",
+        "query:user"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].business": [
+          "object"
+        ],
+        "$.results[].business.borough": [
+          "null"
+        ],
+        "$.results[].business.businessdistinction_set": [
+          "array"
+        ],
+        "$.results[].business.businessdistinction_set[]": [
+          "any"
+        ],
+        "$.results[].business.businesshours_set": [
+          "array"
+        ],
+        "$.results[].business.businesshours_set[]": [
+          "object"
+        ],
+        "$.results[].business.city": [
+          "string"
+        ],
+        "$.results[].business.country": [
+          "string"
+        ],
+        "$.results[].business.cuisines": [
+          "array"
+        ],
+        "$.results[].business.cuisines[]": [
+          "string"
+        ],
+        "$.results[].business.default_category": [
+          "null"
+        ],
+        "$.results[].business.external_place_key": [
+          "string"
+        ],
+        "$.results[].business.has_cover_photo": [
+          "boolean"
+        ],
+        "$.results[].business.has_delivery_links": [
+          "boolean"
+        ],
+        "$.results[].business.has_no_show_fee": [
+          "boolean"
+        ],
+        "$.results[].business.has_res_links": [
+          "boolean"
+        ],
+        "$.results[].business.id": [
+          "number"
+        ],
+        "$.results[].business.lat": [
+          "number"
+        ],
+        "$.results[].business.lng": [
+          "number"
+        ],
+        "$.results[].business.name": [
+          "string"
+        ],
+        "$.results[].business.neighborhood": [
+          "string"
+        ],
+        "$.results[].business.phone_number": [
+          "string"
+        ],
+        "$.results[].business.place_id": [
+          "string"
+        ],
+        "$.results[].business.price": [
+          "number"
+        ],
+        "$.results[].business.price_key": [
+          "string"
+        ],
+        "$.results[].business.quick_link": [
+          "string"
+        ],
+        "$.results[].business.reservation_venue_id": [
+          "null"
+        ],
+        "$.results[].business.status": [
+          "string"
+        ],
+        "$.results[].business.tz": [
+          "string"
+        ],
+        "$.results[].business.website": [
+          "string"
+        ],
+        "$.results[].category": [
+          "string"
+        ],
+        "$.results[].created_dt": [
+          "string"
+        ],
+        "$.results[].id": [
+          "number"
+        ],
+        "$.results[].latest_visit_date": [
+          "string"
+        ],
+        "$.results[].score": [
+          "number"
+        ],
+        "$.results[].user": [
+          "string"
+        ],
+        "$.results[].value": [
+          "number"
+        ],
+        "$.results[].visit_dates": [
+          "array"
+        ],
+        "$.results[].visit_dates[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/user-scores/{user}/": {
+      "path": "/api/user-scores/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "array"
+        ],
+        "$[]": [
+          "object"
+        ],
+        "$[].business_id": [
+          "number"
+        ],
+        "$[].category": [
+          "string"
+        ],
+        "$[].labels": [
+          "array"
+        ],
+        "$[].labels[]": [
+          "any"
+        ],
+        "$[].user_id": [
+          "string"
+        ],
+        "$[].value": [
+          "number"
+        ]
+      }
+    },
+    "GET /api/score-average/{user}/ALL/": {
+      "path": "/api/score-average/{uuid}/ALL/",
+      "required": [
+        "header:Origin",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.CITY": [
+          "array"
+        ],
+        "$.CITY[]": [
+          "object"
+        ],
+        "$.CITY[].count": [
+          "number"
+        ],
+        "$.CITY[].score": [
+          "number"
+        ],
+        "$.CITY[].value": [
+          "string"
+        ],
+        "$.COUNTRY": [
+          "array"
+        ],
+        "$.COUNTRY[]": [
+          "object"
+        ],
+        "$.COUNTRY[].count": [
+          "number"
+        ],
+        "$.COUNTRY[].score": [
+          "number"
+        ],
+        "$.COUNTRY[].value": [
+          "string"
+        ],
+        "$.CUISINE": [
+          "array"
+        ],
+        "$.CUISINE[]": [
+          "object"
+        ],
+        "$.CUISINE[].count": [
+          "number"
+        ],
+        "$.CUISINE[].score": [
+          "number"
+        ],
+        "$.CUISINE[].value": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/visit-dates-on-business/{user}/{id}/": {
+      "path": "/api/visit-dates-on-business/{uuid}/{id}/",
+      "required": [
+        "header:Origin",
+        "path:id",
+        "path:uuid"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/datauserbusinesstext-sparse/": {
+      "path": "/api/datauserbusinesstext-sparse/",
+      "required": [
+        "header:Origin",
+        "query:field__name"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.count": [
+          "number"
+        ],
+        "$.next": [
+          "null"
+        ],
+        "$.previous": [
+          "null"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].business": [
+          "number"
+        ],
+        "$.results[].end_dt": [
+          "null"
+        ],
+        "$.results[].field": [
+          "number"
+        ],
+        "$.results[].id": [
+          "number"
+        ],
+        "$.results[].start_dt": [
+          "string"
+        ],
+        "$.results[].user": [
+          "string"
+        ],
+        "$.results[].value": [
+          "string"
+        ],
+        "$.results[].visit": [
+          "null"
+        ]
+      }
+    },
+    "GET /api/user-business-photos/": {
+      "path": "/api/user-business-photos/",
+      "required": [
+        "header:Origin",
+        "query:user"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].bb_image": [
+          "string"
+        ],
+        "$.results[].bb_thumbnail": [
+          "string"
+        ],
+        "$.results[].business": [
+          "number"
+        ],
+        "$.results[].created_dt": [
+          "string"
+        ],
+        "$.results[].description": [
+          "string"
+        ],
+        "$.results[].favorite_dish": [
+          "boolean"
+        ],
+        "$.results[].id": [
+          "number"
+        ],
+        "$.results[].image": [
+          "string"
+        ],
+        "$.results[].likes": [
+          "array"
+        ],
+        "$.results[].likes[]": [
+          "any"
+        ],
+        "$.results[].order": [
+          "number"
+        ],
+        "$.results[].status": [
+          "string"
+        ],
+        "$.results[].thumbnail": [
+          "string"
+        ],
+        "$.results[].user": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/get-bookmark/": {
+      "path": "/api/get-bookmark/",
+      "required": [
+        "header:Origin",
+        "query:user"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.Restaurants": [
+          "array"
+        ],
+        "$.Restaurants[]": [
+          "object"
+        ],
+        "$.Restaurants[].business": [
+          "object"
+        ],
+        "$.Restaurants[].business.borough": [
+          "string"
+        ],
+        "$.Restaurants[].business.businessdistinction_set": [
+          "array"
+        ],
+        "$.Restaurants[].business.businessdistinction_set[]": [
+          "any"
+        ],
+        "$.Restaurants[].business.businesshours_set": [
+          "array"
+        ],
+        "$.Restaurants[].business.businesshours_set[]": [
+          "object"
+        ],
+        "$.Restaurants[].business.city": [
+          "string"
+        ],
+        "$.Restaurants[].business.country": [
+          "string"
+        ],
+        "$.Restaurants[].business.cuisines": [
+          "array"
+        ],
+        "$.Restaurants[].business.cuisines[]": [
+          "string"
+        ],
+        "$.Restaurants[].business.default_category": [
+          "null"
+        ],
+        "$.Restaurants[].business.external_place_key": [
+          "string"
+        ],
+        "$.Restaurants[].business.has_cover_photo": [
+          "boolean"
+        ],
+        "$.Restaurants[].business.has_delivery_links": [
+          "boolean"
+        ],
+        "$.Restaurants[].business.has_no_show_fee": [
+          "boolean"
+        ],
+        "$.Restaurants[].business.has_res_links": [
+          "boolean"
+        ],
+        "$.Restaurants[].business.id": [
+          "number"
+        ],
+        "$.Restaurants[].business.lat": [
+          "number"
+        ],
+        "$.Restaurants[].business.lng": [
+          "number"
+        ],
+        "$.Restaurants[].business.name": [
+          "string"
+        ],
+        "$.Restaurants[].business.neighborhood": [
+          "null"
+        ],
+        "$.Restaurants[].business.phone_number": [
+          "string"
+        ],
+        "$.Restaurants[].business.place_id": [
+          "string"
+        ],
+        "$.Restaurants[].business.price": [
+          "number"
+        ],
+        "$.Restaurants[].business.price_key": [
+          "string"
+        ],
+        "$.Restaurants[].business.quick_link": [
+          "string"
+        ],
+        "$.Restaurants[].business.reservation_venue_id": [
+          "null"
+        ],
+        "$.Restaurants[].business.status": [
+          "string"
+        ],
+        "$.Restaurants[].business.tz": [
+          "string"
+        ],
+        "$.Restaurants[].business.website": [
+          "string"
+        ],
+        "$.Restaurants[].category": [
+          "string"
+        ],
+        "$.Restaurants[].id": [
+          "number"
+        ],
+        "$.Restaurants[].start_dt": [
+          "string"
+        ],
+        "$.Restaurants[].user": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/user-guide/": {
+      "path": "/api/user-guide/",
+      "required": [
+        "header:Origin",
+        "query:user_id"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].audience": [
+          "string"
+        ],
+        "$.results[].can_add_collaborator": [
+          "boolean"
+        ],
+        "$.results[].can_add_items": [
+          "boolean"
+        ],
+        "$.results[].can_delete": [
+          "boolean"
+        ],
+        "$.results[].can_mark_paid": [
+          "boolean"
+        ],
+        "$.results[].can_reorder": [
+          "boolean"
+        ],
+        "$.results[].categories": [
+          "array"
+        ],
+        "$.results[].categories[]": [
+          "string"
+        ],
+        "$.results[].category": [
+          "null"
+        ],
+        "$.results[].cities": [
+          "array"
+        ],
+        "$.results[].cities[]": [
+          "string"
+        ],
+        "$.results[].city": [
+          "string"
+        ],
+        "$.results[].collaborators": [
+          "array"
+        ],
+        "$.results[].collaborators[]": [
+          "object"
+        ],
+        "$.results[].collaborators[].first_name": [
+          "string"
+        ],
+        "$.results[].collaborators[].full_name": [
+          "string"
+        ],
+        "$.results[].collaborators[].is_collaborator": [
+          "null"
+        ],
+        "$.results[].collaborators[].last_name": [
+          "string"
+        ],
+        "$.results[].collaborators[].profile_photo": [
+          "null"
+        ],
+        "$.results[].collaborators[].status": [
+          "string"
+        ],
+        "$.results[].collaborators[].user_id": [
+          "string"
+        ],
+        "$.results[].collaborators[].username": [
+          "string"
+        ],
+        "$.results[].description": [
+          "string"
+        ],
+        "$.results[].display_photo": [
+          "object"
+        ],
+        "$.results[].display_photo.bb_image": [
+          "string"
+        ],
+        "$.results[].display_photo.bb_thumbnail": [
+          "string"
+        ],
+        "$.results[].display_photo.business": [
+          "number"
+        ],
+        "$.results[].display_photo.created_dt": [
+          "string"
+        ],
+        "$.results[].display_photo.description": [
+          "string"
+        ],
+        "$.results[].display_photo.favorite_dish": [
+          "boolean"
+        ],
+        "$.results[].display_photo.id": [
+          "number"
+        ],
+        "$.results[].display_photo.image": [
+          "string"
+        ],
+        "$.results[].display_photo.likes": [
+          "array"
+        ],
+        "$.results[].display_photo.likes[]": [
+          "string"
+        ],
+        "$.results[].display_photo.order": [
+          "number"
+        ],
+        "$.results[].display_photo.thumbnail": [
+          "string"
+        ],
+        "$.results[].display_photo.user": [
+          "string"
+        ],
+        "$.results[].draft": [
+          "boolean"
+        ],
+        "$.results[].filter_key": [
+          "string"
+        ],
+        "$.results[].filter_value": [
+          "string"
+        ],
+        "$.results[].full_title": [
+          "string"
+        ],
+        "$.results[].hide_edit_notes_option": [
+          "boolean"
+        ],
+        "$.results[].hscroll_title": [
+          "string"
+        ],
+        "$.results[].id": [
+          "number"
+        ],
+        "$.results[].is_collaborative": [
+          "boolean"
+        ],
+        "$.results[].is_draft": [
+          "boolean"
+        ],
+        "$.results[].is_owner": [
+          "boolean"
+        ],
+        "$.results[].is_user_guide": [
+          "boolean"
+        ],
+        "$.results[].list_field": [
+          "string"
+        ],
+        "$.results[].name": [
+          "string"
+        ],
+        "$.results[].owner": [
+          "object"
+        ],
+        "$.results[].owner.first_name": [
+          "string"
+        ],
+        "$.results[].owner.full_name": [
+          "string"
+        ],
+        "$.results[].owner.last_name": [
+          "string"
+        ],
+        "$.results[].owner.profile_photo": [
+          "string"
+        ],
+        "$.results[].owner.user_id": [
+          "string"
+        ],
+        "$.results[].owner.username": [
+          "string"
+        ],
+        "$.results[].paid": [
+          "boolean"
+        ],
+        "$.results[].rec_ask_id": [
+          "null"
+        ],
+        "$.results[].show_crown": [
+          "boolean"
+        ],
+        "$.results[].source": [
+          "string"
+        ],
+        "$.results[].subtitle": [
+          "string"
+        ],
+        "$.results[].total_count": [
+          "number"
+        ]
+      }
+    },
+    "GET /api/user-guide-items/": {
+      "path": "/api/user-guide-items/",
+      "required": [
+        "header:Origin",
+        "query:user_id"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].added_by": [
+          "object"
+        ],
+        "$.results[].added_by.first_name": [
+          "string"
+        ],
+        "$.results[].added_by.full_name": [
+          "string"
+        ],
+        "$.results[].added_by.last_name": [
+          "string"
+        ],
+        "$.results[].added_by.profile_photo": [
+          "string"
+        ],
+        "$.results[].added_by.user_id": [
+          "string"
+        ],
+        "$.results[].added_by.username": [
+          "string"
+        ],
+        "$.results[].business": [
+          "number"
+        ],
+        "$.results[].guide": [
+          "number"
+        ]
+      }
+    },
+    "GET /api/user-guide-list-view/": {
+      "path": "/api/user-guide-list-view/",
+      "required": [
+        "query:check_user_access",
+        "query:list_id",
+        "query:viewer"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.added_by": [
+          "object"
+        ],
+        "$.added_by.1115150": [
+          "object"
+        ],
+        "$.added_by.1115150.first_name": [
+          "string"
+        ],
+        "$.added_by.1115150.full_name": [
+          "string"
+        ],
+        "$.added_by.1115150.last_name": [
+          "string"
+        ],
+        "$.added_by.1115150.profile_photo": [
+          "string"
+        ],
+        "$.added_by.1115150.user_id": [
+          "string"
+        ],
+        "$.added_by.1115150.username": [
+          "string"
+        ],
+        "$.added_by.1223867": [
+          "object"
+        ],
+        "$.added_by.1223867.first_name": [
+          "string"
+        ],
+        "$.added_by.1223867.full_name": [
+          "string"
+        ],
+        "$.added_by.1223867.last_name": [
+          "string"
+        ],
+        "$.added_by.1223867.profile_photo": [
+          "string"
+        ],
+        "$.added_by.1223867.user_id": [
+          "string"
+        ],
+        "$.added_by.1223867.username": [
+          "string"
+        ],
+        "$.added_by.1269218": [
+          "object"
+        ],
+        "$.added_by.1269218.first_name": [
+          "string"
+        ],
+        "$.added_by.1269218.full_name": [
+          "string"
+        ],
+        "$.added_by.1269218.last_name": [
+          "string"
+        ],
+        "$.added_by.1269218.profile_photo": [
+          "string"
+        ],
+        "$.added_by.1269218.user_id": [
+          "string"
+        ],
+        "$.added_by.1269218.username": [
+          "string"
+        ],
+        "$.added_by.130376": [
+          "object"
+        ],
+        "$.added_by.130376.first_name": [
+          "string"
+        ],
+        "$.added_by.130376.full_name": [
+          "string"
+        ],
+        "$.added_by.130376.last_name": [
+          "string"
+        ],
+        "$.added_by.130376.profile_photo": [
+          "string"
+        ],
+        "$.added_by.130376.user_id": [
+          "string"
+        ],
+        "$.added_by.130376.username": [
+          "string"
+        ],
+        "$.added_by.1339138": [
+          "object"
+        ],
+        "$.added_by.1339138.first_name": [
+          "string"
+        ],
+        "$.added_by.1339138.full_name": [
+          "string"
+        ],
+        "$.added_by.1339138.last_name": [
+          "string"
+        ],
+        "$.added_by.1339138.profile_photo": [
+          "string"
+        ],
+        "$.added_by.1339138.user_id": [
+          "string"
+        ],
+        "$.added_by.1339138.username": [
+          "string"
+        ],
+        "$.added_by.1361696": [
+          "object"
+        ],
+        "$.added_by.1361696.first_name": [
+          "string"
+        ],
+        "$.added_by.1361696.full_name": [
+          "string"
+        ],
+        "$.added_by.1361696.last_name": [
+          "string"
+        ],
+        "$.added_by.1361696.profile_photo": [
+          "string"
+        ],
+        "$.added_by.1361696.user_id": [
+          "string"
+        ],
+        "$.added_by.1361696.username": [
+          "string"
+        ],
+        "$.added_by.142877": [
+          "object"
+        ],
+        "$.added_by.142877.first_name": [
+          "string"
+        ],
+        "$.added_by.142877.full_name": [
+          "string"
+        ],
+        "$.added_by.142877.last_name": [
+          "string"
+        ],
+        "$.added_by.142877.profile_photo": [
+          "string"
+        ],
+        "$.added_by.142877.user_id": [
+          "string"
+        ],
+        "$.added_by.142877.username": [
+          "string"
+        ],
+        "$.added_by.1668290": [
+          "object"
+        ],
+        "$.added_by.1668290.first_name": [
+          "string"
+        ],
+        "$.added_by.1668290.full_name": [
+          "string"
+        ],
+        "$.added_by.1668290.last_name": [
+          "string"
+        ],
+        "$.added_by.1668290.profile_photo": [
+          "string"
+        ],
+        "$.added_by.1668290.user_id": [
+          "string"
+        ],
+        "$.added_by.1668290.username": [
+          "string"
+        ],
+        "$.added_by.189244": [
+          "object"
+        ],
+        "$.added_by.189244.first_name": [
+          "string"
+        ],
+        "$.added_by.189244.full_name": [
+          "string"
+        ],
+        "$.added_by.189244.last_name": [
+          "string"
+        ],
+        "$.added_by.189244.profile_photo": [
+          "string"
+        ],
+        "$.added_by.189244.user_id": [
+          "string"
+        ],
+        "$.added_by.189244.username": [
+          "string"
+        ],
+        "$.added_by.2014109": [
+          "object"
+        ],
+        "$.added_by.2014109.first_name": [
+          "string"
+        ],
+        "$.added_by.2014109.full_name": [
+          "string"
+        ],
+        "$.added_by.2014109.last_name": [
+          "string"
+        ],
+        "$.added_by.2014109.profile_photo": [
+          "string"
+        ],
+        "$.added_by.2014109.user_id": [
+          "string"
+        ],
+        "$.added_by.2014109.username": [
+          "string"
+        ],
+        "$.added_by.205268": [
+          "object"
+        ],
+        "$.added_by.205268.first_name": [
+          "string"
+        ],
+        "$.added_by.205268.full_name": [
+          "string"
+        ],
+        "$.added_by.205268.last_name": [
+          "string"
+        ],
+        "$.added_by.205268.profile_photo": [
+          "string"
+        ],
+        "$.added_by.205268.user_id": [
+          "string"
+        ],
+        "$.added_by.205268.username": [
+          "string"
+        ],
+        "$.added_by.205281": [
+          "object"
+        ],
+        "$.added_by.205281.first_name": [
+          "string"
+        ],
+        "$.added_by.205281.full_name": [
+          "string"
+        ],
+        "$.added_by.205281.last_name": [
+          "string"
+        ],
+        "$.added_by.205281.profile_photo": [
+          "string"
+        ],
+        "$.added_by.205281.user_id": [
+          "string"
+        ],
+        "$.added_by.205281.username": [
+          "string"
+        ],
+        "$.added_by.2501463": [
+          "object"
+        ],
+        "$.added_by.2501463.first_name": [
+          "string"
+        ],
+        "$.added_by.2501463.full_name": [
+          "string"
+        ],
+        "$.added_by.2501463.last_name": [
+          "string"
+        ],
+        "$.added_by.2501463.profile_photo": [
+          "string"
+        ],
+        "$.added_by.2501463.user_id": [
+          "string"
+        ],
+        "$.added_by.2501463.username": [
+          "string"
+        ],
+        "$.added_by.2666906": [
+          "object"
+        ],
+        "$.added_by.2666906.first_name": [
+          "string"
+        ],
+        "$.added_by.2666906.full_name": [
+          "string"
+        ],
+        "$.added_by.2666906.last_name": [
+          "string"
+        ],
+        "$.added_by.2666906.profile_photo": [
+          "string"
+        ],
+        "$.added_by.2666906.user_id": [
+          "string"
+        ],
+        "$.added_by.2666906.username": [
+          "string"
+        ],
+        "$.added_by.2904687": [
+          "object"
+        ],
+        "$.added_by.2904687.first_name": [
+          "string"
+        ],
+        "$.added_by.2904687.full_name": [
+          "string"
+        ],
+        "$.added_by.2904687.last_name": [
+          "string"
+        ],
+        "$.added_by.2904687.profile_photo": [
+          "string"
+        ],
+        "$.added_by.2904687.user_id": [
+          "string"
+        ],
+        "$.added_by.2904687.username": [
+          "string"
+        ],
+        "$.added_by.3098748": [
+          "object"
+        ],
+        "$.added_by.3098748.first_name": [
+          "string"
+        ],
+        "$.added_by.3098748.full_name": [
+          "string"
+        ],
+        "$.added_by.3098748.last_name": [
+          "string"
+        ],
+        "$.added_by.3098748.profile_photo": [
+          "string"
+        ],
+        "$.added_by.3098748.user_id": [
+          "string"
+        ],
+        "$.added_by.3098748.username": [
+          "string"
+        ],
+        "$.added_by.3280289": [
+          "object"
+        ],
+        "$.added_by.3280289.first_name": [
+          "string"
+        ],
+        "$.added_by.3280289.full_name": [
+          "string"
+        ],
+        "$.added_by.3280289.last_name": [
+          "string"
+        ],
+        "$.added_by.3280289.profile_photo": [
+          "string"
+        ],
+        "$.added_by.3280289.user_id": [
+          "string"
+        ],
+        "$.added_by.3280289.username": [
+          "string"
+        ],
+        "$.added_by.342879": [
+          "object"
+        ],
+        "$.added_by.342879.first_name": [
+          "string"
+        ],
+        "$.added_by.342879.full_name": [
+          "string"
+        ],
+        "$.added_by.342879.last_name": [
+          "string"
+        ],
+        "$.added_by.342879.profile_photo": [
+          "string"
+        ],
+        "$.added_by.342879.user_id": [
+          "string"
+        ],
+        "$.added_by.342879.username": [
+          "string"
+        ],
+        "$.added_by.343991": [
+          "object"
+        ],
+        "$.added_by.343991.first_name": [
+          "string"
+        ],
+        "$.added_by.343991.full_name": [
+          "string"
+        ],
+        "$.added_by.343991.last_name": [
+          "string"
+        ],
+        "$.added_by.343991.profile_photo": [
+          "string"
+        ],
+        "$.added_by.343991.user_id": [
+          "string"
+        ],
+        "$.added_by.343991.username": [
+          "string"
+        ],
+        "$.added_by.381062": [
+          "object"
+        ],
+        "$.added_by.381062.first_name": [
+          "string"
+        ],
+        "$.added_by.381062.full_name": [
+          "string"
+        ],
+        "$.added_by.381062.last_name": [
+          "string"
+        ],
+        "$.added_by.381062.profile_photo": [
+          "string"
+        ],
+        "$.added_by.381062.user_id": [
+          "string"
+        ],
+        "$.added_by.381062.username": [
+          "string"
+        ],
+        "$.added_by.578457": [
+          "object"
+        ],
+        "$.added_by.578457.first_name": [
+          "string"
+        ],
+        "$.added_by.578457.full_name": [
+          "string"
+        ],
+        "$.added_by.578457.last_name": [
+          "string"
+        ],
+        "$.added_by.578457.profile_photo": [
+          "string"
+        ],
+        "$.added_by.578457.user_id": [
+          "string"
+        ],
+        "$.added_by.578457.username": [
+          "string"
+        ],
+        "$.added_by.640927": [
+          "object"
+        ],
+        "$.added_by.640927.first_name": [
+          "string"
+        ],
+        "$.added_by.640927.full_name": [
+          "string"
+        ],
+        "$.added_by.640927.last_name": [
+          "string"
+        ],
+        "$.added_by.640927.profile_photo": [
+          "string"
+        ],
+        "$.added_by.640927.user_id": [
+          "string"
+        ],
+        "$.added_by.640927.username": [
+          "string"
+        ],
+        "$.added_by.669249": [
+          "object"
+        ],
+        "$.added_by.669249.first_name": [
+          "string"
+        ],
+        "$.added_by.669249.full_name": [
+          "string"
+        ],
+        "$.added_by.669249.last_name": [
+          "string"
+        ],
+        "$.added_by.669249.profile_photo": [
+          "string"
+        ],
+        "$.added_by.669249.user_id": [
+          "string"
+        ],
+        "$.added_by.669249.username": [
+          "string"
+        ],
+        "$.added_by.671134": [
+          "object"
+        ],
+        "$.added_by.671134.first_name": [
+          "string"
+        ],
+        "$.added_by.671134.full_name": [
+          "string"
+        ],
+        "$.added_by.671134.last_name": [
+          "string"
+        ],
+        "$.added_by.671134.profile_photo": [
+          "string"
+        ],
+        "$.added_by.671134.user_id": [
+          "string"
+        ],
+        "$.added_by.671134.username": [
+          "string"
+        ],
+        "$.added_by.696344": [
+          "object"
+        ],
+        "$.added_by.696344.first_name": [
+          "string"
+        ],
+        "$.added_by.696344.full_name": [
+          "string"
+        ],
+        "$.added_by.696344.last_name": [
+          "string"
+        ],
+        "$.added_by.696344.profile_photo": [
+          "string"
+        ],
+        "$.added_by.696344.user_id": [
+          "string"
+        ],
+        "$.added_by.696344.username": [
+          "string"
+        ],
+        "$.added_by.697355": [
+          "object"
+        ],
+        "$.added_by.697355.first_name": [
+          "string"
+        ],
+        "$.added_by.697355.full_name": [
+          "string"
+        ],
+        "$.added_by.697355.last_name": [
+          "string"
+        ],
+        "$.added_by.697355.profile_photo": [
+          "string"
+        ],
+        "$.added_by.697355.user_id": [
+          "string"
+        ],
+        "$.added_by.697355.username": [
+          "string"
+        ],
+        "$.added_by.718512": [
+          "object"
+        ],
+        "$.added_by.718512.first_name": [
+          "string"
+        ],
+        "$.added_by.718512.full_name": [
+          "string"
+        ],
+        "$.added_by.718512.last_name": [
+          "string"
+        ],
+        "$.added_by.718512.profile_photo": [
+          "string"
+        ],
+        "$.added_by.718512.user_id": [
+          "string"
+        ],
+        "$.added_by.718512.username": [
+          "string"
+        ],
+        "$.added_by.740475": [
+          "object"
+        ],
+        "$.added_by.740475.first_name": [
+          "string"
+        ],
+        "$.added_by.740475.full_name": [
+          "string"
+        ],
+        "$.added_by.740475.last_name": [
+          "string"
+        ],
+        "$.added_by.740475.profile_photo": [
+          "string"
+        ],
+        "$.added_by.740475.user_id": [
+          "string"
+        ],
+        "$.added_by.740475.username": [
+          "string"
+        ],
+        "$.added_by.949272": [
+          "object"
+        ],
+        "$.added_by.949272.first_name": [
+          "string"
+        ],
+        "$.added_by.949272.full_name": [
+          "string"
+        ],
+        "$.added_by.949272.last_name": [
+          "string"
+        ],
+        "$.added_by.949272.profile_photo": [
+          "string"
+        ],
+        "$.added_by.949272.user_id": [
+          "string"
+        ],
+        "$.added_by.949272.username": [
+          "string"
+        ],
+        "$.added_by.968980": [
+          "object"
+        ],
+        "$.added_by.968980.first_name": [
+          "string"
+        ],
+        "$.added_by.968980.full_name": [
+          "string"
+        ],
+        "$.added_by.968980.last_name": [
+          "string"
+        ],
+        "$.added_by.968980.profile_photo": [
+          "string"
+        ],
+        "$.added_by.968980.user_id": [
+          "string"
+        ],
+        "$.added_by.968980.username": [
+          "string"
+        ],
+        "$.city": [
+          "string"
+        ],
+        "$.list_field": [
+          "string"
+        ],
+        "$.playlist": [
+          "object"
+        ],
+        "$.playlist.audience": [
+          "string"
+        ],
+        "$.playlist.can_add_collaborator": [
+          "boolean"
+        ],
+        "$.playlist.can_add_items": [
+          "boolean"
+        ],
+        "$.playlist.can_delete": [
+          "boolean"
+        ],
+        "$.playlist.can_mark_paid": [
+          "boolean"
+        ],
+        "$.playlist.can_reorder": [
+          "boolean"
+        ],
+        "$.playlist.categories": [
+          "array"
+        ],
+        "$.playlist.categories[]": [
+          "string"
+        ],
+        "$.playlist.category": [
+          "null"
+        ],
+        "$.playlist.cities": [
+          "array"
+        ],
+        "$.playlist.cities[]": [
+          "string"
+        ],
+        "$.playlist.city": [
+          "string"
+        ],
+        "$.playlist.collaborators": [
+          "array"
+        ],
+        "$.playlist.collaborators[]": [
+          "object"
+        ],
+        "$.playlist.collaborators[].first_name": [
+          "string"
+        ],
+        "$.playlist.collaborators[].full_name": [
+          "string"
+        ],
+        "$.playlist.collaborators[].is_collaborator": [
+          "null"
+        ],
+        "$.playlist.collaborators[].last_name": [
+          "string"
+        ],
+        "$.playlist.collaborators[].profile_photo": [
+          "null"
+        ],
+        "$.playlist.collaborators[].status": [
+          "string"
+        ],
+        "$.playlist.collaborators[].user_id": [
+          "string"
+        ],
+        "$.playlist.collaborators[].username": [
+          "string"
+        ],
+        "$.playlist.description": [
+          "string"
+        ],
+        "$.playlist.display_photo": [
+          "object"
+        ],
+        "$.playlist.display_photo.bb_image": [
+          "string"
+        ],
+        "$.playlist.display_photo.bb_thumbnail": [
+          "string"
+        ],
+        "$.playlist.display_photo.business": [
+          "number"
+        ],
+        "$.playlist.display_photo.created_dt": [
+          "string"
+        ],
+        "$.playlist.display_photo.description": [
+          "string"
+        ],
+        "$.playlist.display_photo.favorite_dish": [
+          "boolean"
+        ],
+        "$.playlist.display_photo.id": [
+          "number"
+        ],
+        "$.playlist.display_photo.image": [
+          "string"
+        ],
+        "$.playlist.display_photo.likes": [
+          "array"
+        ],
+        "$.playlist.display_photo.likes[]": [
+          "string"
+        ],
+        "$.playlist.display_photo.order": [
+          "number"
+        ],
+        "$.playlist.display_photo.thumbnail": [
+          "string"
+        ],
+        "$.playlist.display_photo.user": [
+          "string"
+        ],
+        "$.playlist.display_photo.username": [
+          "string"
+        ],
+        "$.playlist.draft": [
+          "boolean"
+        ],
+        "$.playlist.filter_key": [
+          "string"
+        ],
+        "$.playlist.filter_value": [
+          "string"
+        ],
+        "$.playlist.full_title": [
+          "string"
+        ],
+        "$.playlist.hide_edit_notes_option": [
+          "boolean"
+        ],
+        "$.playlist.hscroll_title": [
+          "string"
+        ],
+        "$.playlist.id": [
+          "number"
+        ],
+        "$.playlist.is_collaborative": [
+          "boolean"
+        ],
+        "$.playlist.is_draft": [
+          "boolean"
+        ],
+        "$.playlist.is_owner": [
+          "boolean"
+        ],
+        "$.playlist.is_user_guide": [
+          "boolean"
+        ],
+        "$.playlist.list_field": [
+          "string"
+        ],
+        "$.playlist.name": [
+          "string"
+        ],
+        "$.playlist.owner": [
+          "object"
+        ],
+        "$.playlist.owner.first_name": [
+          "string"
+        ],
+        "$.playlist.owner.full_name": [
+          "string"
+        ],
+        "$.playlist.owner.last_name": [
+          "string"
+        ],
+        "$.playlist.owner.profile_photo": [
+          "string"
+        ],
+        "$.playlist.owner.user_id": [
+          "string"
+        ],
+        "$.playlist.owner.username": [
+          "string"
+        ],
+        "$.playlist.paid": [
+          "boolean"
+        ],
+        "$.playlist.rec_ask_id": [
+          "null"
+        ],
+        "$.playlist.show_crown": [
+          "boolean"
+        ],
+        "$.playlist.source": [
+          "string"
+        ],
+        "$.playlist.subtitle": [
+          "string"
+        ],
+        "$.playlist.total_count": [
+          "number"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "any"
+        ],
+        "$.show_categories_on_items": [
+          "boolean"
+        ],
+        "$.user": [
+          "object"
+        ],
+        "$.user.company": [
+          "null"
+        ],
+        "$.user.created_dt": [
+          "string"
+        ],
+        "$.user.first_name": [
+          "string"
+        ],
+        "$.user.full_name": [
+          "string"
+        ],
+        "$.user.has_supper_club": [
+          "boolean"
+        ],
+        "$.user.has_vip": [
+          "boolean"
+        ],
+        "$.user.id": [
+          "string"
+        ],
+        "$.user.instagram_url": [
+          "null"
+        ],
+        "$.user.is_playlist_eligible": [
+          "boolean"
+        ],
+        "$.user.last_name": [
+          "string"
+        ],
+        "$.user.photo": [
+          "null"
+        ],
+        "$.user.profile_photo": [
+          "string"
+        ],
+        "$.user.public": [
+          "boolean"
+        ],
+        "$.user.school": [
+          "null"
+        ],
+        "$.user.tiktok_url": [
+          "null"
+        ],
+        "$.user.username": [
+          "string"
+        ],
+        "$.viewer_status": [
+          "object"
+        ],
+        "$.viewer_status.1115150": [
+          "object"
+        ],
+        "$.viewer_status.1115150.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.1115150.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.1223867": [
+          "object"
+        ],
+        "$.viewer_status.1223867.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.1223867.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.1269218": [
+          "object"
+        ],
+        "$.viewer_status.1269218.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.1269218.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.130376": [
+          "object"
+        ],
+        "$.viewer_status.130376.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.130376.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.1339138": [
+          "object"
+        ],
+        "$.viewer_status.1339138.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.1339138.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.1361696": [
+          "object"
+        ],
+        "$.viewer_status.1361696.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.1361696.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.142877": [
+          "object"
+        ],
+        "$.viewer_status.142877.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.142877.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.1668290": [
+          "object"
+        ],
+        "$.viewer_status.1668290.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.1668290.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.189244": [
+          "object"
+        ],
+        "$.viewer_status.189244.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.189244.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.2014109": [
+          "object"
+        ],
+        "$.viewer_status.2014109.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.2014109.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.205268": [
+          "object"
+        ],
+        "$.viewer_status.205268.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.205268.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.205281": [
+          "object"
+        ],
+        "$.viewer_status.205281.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.205281.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.2501463": [
+          "object"
+        ],
+        "$.viewer_status.2501463.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.2501463.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.2666906": [
+          "object"
+        ],
+        "$.viewer_status.2666906.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.2666906.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.2904687": [
+          "object"
+        ],
+        "$.viewer_status.2904687.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.2904687.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.3098748": [
+          "object"
+        ],
+        "$.viewer_status.3098748.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.3098748.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.3280289": [
+          "object"
+        ],
+        "$.viewer_status.3280289.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.3280289.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.342879": [
+          "object"
+        ],
+        "$.viewer_status.342879.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.342879.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.343991": [
+          "object"
+        ],
+        "$.viewer_status.343991.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.343991.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.381062": [
+          "object"
+        ],
+        "$.viewer_status.381062.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.381062.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.578457": [
+          "object"
+        ],
+        "$.viewer_status.578457.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.578457.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.640927": [
+          "object"
+        ],
+        "$.viewer_status.640927.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.640927.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.669249": [
+          "object"
+        ],
+        "$.viewer_status.669249.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.669249.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.671134": [
+          "object"
+        ],
+        "$.viewer_status.671134.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.671134.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.696344": [
+          "object"
+        ],
+        "$.viewer_status.696344.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.696344.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.697355": [
+          "object"
+        ],
+        "$.viewer_status.697355.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.697355.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.718512": [
+          "object"
+        ],
+        "$.viewer_status.718512.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.718512.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.740475": [
+          "object"
+        ],
+        "$.viewer_status.740475.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.740475.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.949272": [
+          "object"
+        ],
+        "$.viewer_status.949272.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.949272.has_ranked": [
+          "boolean"
+        ],
+        "$.viewer_status.968980": [
+          "object"
+        ],
+        "$.viewer_status.968980.has_bookmarked": [
+          "boolean"
+        ],
+        "$.viewer_status.968980.has_ranked": [
+          "boolean"
+        ]
+      }
+    },
+    "GET /api/followers/{user}/": {
+      "path": "/api/followers/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid",
+        "query:include_followed"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].company": [
+          "null"
+        ],
+        "$.results[].created_dt": [
+          "string"
+        ],
+        "$.results[].first_name": [
+          "string"
+        ],
+        "$.results[].full_name": [
+          "string"
+        ],
+        "$.results[].has_supper_club": [
+          "boolean"
+        ],
+        "$.results[].has_vip": [
+          "boolean"
+        ],
+        "$.results[].id": [
+          "string"
+        ],
+        "$.results[].instagram_url": [
+          "null"
+        ],
+        "$.results[].is_playlist_eligible": [
+          "boolean"
+        ],
+        "$.results[].last_name": [
+          "string"
+        ],
+        "$.results[].photo": [
+          "null"
+        ],
+        "$.results[].profile_photo": [
+          "null"
+        ],
+        "$.results[].public": [
+          "boolean"
+        ],
+        "$.results[].school": [
+          "null"
+        ],
+        "$.results[].tiktok_url": [
+          "null"
+        ],
+        "$.results[].username": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/following/{user}/": {
+      "path": "/api/following/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid",
+        "query:include_followed"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].company": [
+          "null"
+        ],
+        "$.results[].created_dt": [
+          "string"
+        ],
+        "$.results[].first_name": [
+          "string"
+        ],
+        "$.results[].full_name": [
+          "string"
+        ],
+        "$.results[].has_supper_club": [
+          "boolean"
+        ],
+        "$.results[].has_vip": [
+          "boolean"
+        ],
+        "$.results[].id": [
+          "string"
+        ],
+        "$.results[].instagram_url": [
+          "null"
+        ],
+        "$.results[].is_playlist_eligible": [
+          "boolean"
+        ],
+        "$.results[].last_name": [
+          "string"
+        ],
+        "$.results[].photo": [
+          "null"
+        ],
+        "$.results[].profile_photo": [
+          "null"
+        ],
+        "$.results[].public": [
+          "boolean"
+        ],
+        "$.results[].school": [
+          "null"
+        ],
+        "$.results[].tiktok_url": [
+          "null"
+        ],
+        "$.results[].username": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/search-app/": {
+      "path": "/api/search-app/",
+      "required": [
+        "header:Origin"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.predictions": [
+          "array"
+        ],
+        "$.predictions[]": [
+          "any"
+        ]
+      }
+    },
+    "GET /api/business-hours/": {
+      "path": "/api/business-hours/",
+      "required": [
+        "query:business"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "object"
+        ],
+        "$.results": [
+          "array"
+        ],
+        "$.results[]": [
+          "object"
+        ],
+        "$.results[].business": [
+          "number"
+        ],
+        "$.results[].close_day": [
+          "number"
+        ],
+        "$.results[].close_time": [
+          "string"
+        ],
+        "$.results[].created_dt": [
+          "string"
+        ],
+        "$.results[].id": [
+          "number"
+        ],
+        "$.results[].open_day": [
+          "number"
+        ],
+        "$.results[].open_time": [
+          "string"
+        ]
+      }
+    },
+    "GET /api/trending/{user}/": {
+      "path": "/api/trending/{uuid}/",
+      "required": [
+        "header:Origin",
+        "path:uuid",
+        "query:category"
+      ],
+      "required_but_not_sent": [],
+      "response": {
+        "$": [
+          "array"
+        ],
+        "$[]": [
+          "object"
+        ],
+        "$[].borough": [
+          "null"
+        ],
+        "$[].businessdistinction_set": [
+          "array"
+        ],
+        "$[].businessdistinction_set[]": [
+          "any"
+        ],
+        "$[].businesshours_set": [
+          "array"
+        ],
+        "$[].businesshours_set[]": [
+          "object"
+        ],
+        "$[].businesshours_set[].business": [
+          "number"
+        ],
+        "$[].businesshours_set[].close_day": [
+          "number"
+        ],
+        "$[].businesshours_set[].close_time": [
+          "string"
+        ],
+        "$[].businesshours_set[].created_dt": [
+          "string"
+        ],
+        "$[].businesshours_set[].id": [
+          "number"
+        ],
+        "$[].businesshours_set[].open_day": [
+          "number"
+        ],
+        "$[].businesshours_set[].open_time": [
+          "string"
+        ],
+        "$[].city": [
+          "string"
+        ],
+        "$[].country": [
+          "string"
+        ],
+        "$[].cuisines": [
+          "array"
+        ],
+        "$[].cuisines[]": [
+          "string"
+        ],
+        "$[].default_category": [
+          "null"
+        ],
+        "$[].external_place_key": [
+          "string"
+        ],
+        "$[].has_cover_photo": [
+          "boolean"
+        ],
+        "$[].has_delivery_links": [
+          "boolean"
+        ],
+        "$[].has_no_show_fee": [
+          "boolean"
+        ],
+        "$[].has_res_links": [
+          "boolean"
+        ],
+        "$[].id": [
+          "number"
+        ],
+        "$[].lat": [
+          "number"
+        ],
+        "$[].lng": [
+          "number"
+        ],
+        "$[].name": [
+          "string"
+        ],
+        "$[].neighborhood": [
+          "string"
+        ],
+        "$[].phone_number": [
+          "string"
+        ],
+        "$[].place_id": [
+          "string"
+        ],
+        "$[].price": [
+          "number"
+        ],
+        "$[].price_key": [
+          "string"
+        ],
+        "$[].quick_link": [
+          "string"
+        ],
+        "$[].reservation_venue_id": [
+          "null"
+        ],
+        "$[].status": [
+          "string"
+        ],
+        "$[].tz": [
+          "string"
+        ],
+        "$[].website": [
+          "string"
+        ]
+      }
+    }
+  }
+}
