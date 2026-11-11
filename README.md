@@ -54,16 +54,18 @@ beli logout
 from beli import Beli
 
 with Beli.from_session() as beli:  # reuses `beli login`
-    for r in beli.rankings.list("RES")[:10]:
+    for r in beli.rankings.list("RES", sort="score")[:10]:
         note = beli.notes.get(r.business.id)
         print(f"{r.score:.1f}  {r.business.name}  {note or ''}")
 ```
 
-Or pass credentials directly (or set `BELI_EMAIL` and `BELI_PASSWORD`):
+Or pass credentials directly:
 
 ```python
 beli = Beli(email="you@example.com", password="...")
 ```
+
+`Beli()` with no arguments reads `BELI_EMAIL` and `BELI_PASSWORD` from the environment. See [Authentication](#authentication) for the order.
 
 Async works the same way:
 
@@ -79,7 +81,7 @@ async with AsyncBeli.from_session() as beli:
 
 | Resource | Methods |
 |---|---|
-| `beli.rankings` | `list(category)`, `all()`, `visit_dates(business_id)`, `count()`, `count_this_year()` |
+| `beli.rankings` | `list(category, sort=None)`, `all(sort=None)`, `visit_dates(business_id)`, `count()`, `count_this_year()` |
 | `beli.notes` | `list()`, `get(business_id)` |
 | `beli.scores` | `list()`, `averages()` (by city, country, cuisine) |
 | `beli.photos` | `list()` |
@@ -91,9 +93,11 @@ async with AsyncBeli.from_session() as beli:
 
 Methods that read a user's data take `user=` to read someone else's (if their profile is visible to you). Anything else in the [433-operation spec](https://github.com/horse-3903/beli-api-spec) is one `beli.get(...)` away, as long as it's a GET.
 
+`rankings.list()` returns places in the order the API sends them. Pass `sort="score"` for highest score first; places with the same score keep the API's order.
+
 Responses are pydantic models. Beli adds fields often, so unknown fields are kept in `model.model_extra` instead of being dropped.
 
-**Read-only.** Nothing in this package changes your account. The only requests that aren't GETs are login and token refresh, and the transport refuses anything else. Writes (posting reviews, bookmarking) may come later as an explicit opt-in.
+**Read-only.** Nothing in this package changes your account. The only requests that aren't GETs are login and token refresh, and the transport refuses to send anything else.
 
 ## Authentication
 
@@ -102,20 +106,47 @@ Login is `email` (or `phone`) plus password, sent to Beli's token endpoint. You 
 - `beli login` saves only the tokens, to `~/.config/beli/session.json` with `0600` permissions. Your password is never written to disk. Override the path with `BELI_SESSION_FILE`.
 - If your account has no password (for example, you sign in with Apple or Google), capture a refresh token from the app's traffic (for example with mitmproxy) and run `beli login --token <refresh>`, or set `BELI_REFRESH_TOKEN`.
 
+A client takes its credentials from the first of these that has any, and never mixes them:
+
+1. Constructor arguments: `email` or `phone` with `password`, `refresh_token`, `access_token`.
+2. The session file (`session_file=`, or `Beli.from_session()`), if it holds a token that has not expired.
+3. The environment: `BELI_REFRESH_TOKEN`, or `BELI_PASSWORD` with `BELI_EMAIL` or `BELI_PHONE`.
+
+New tokens are saved to the session file whichever source they came from. To see which source was used, turn on debug logging for the `beli` logger:
+
+```python
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+```
+
+Before its first request to the main API, a client asks Beli which hosts to use (`/api/api-hosts/`) and keeps the answer for its lifetime. If that fails it uses the built-in hosts. Pass `discover_hosts=False` to skip the question.
+
+One `Beli` can be shared between threads: token refresh is done once, under a lock.
+
 ## Rate limits
 
 Beli answers bursts with HTTP 429. The client spaces requests at least 1 second apart (`min_interval=`, or `--interval` on the CLI), honors `Retry-After`, and retries 429/502/503/504 with backoff. A full export is about a dozen requests.
 
 ## Reliability
 
-Every endpoint used here comes from [beli-api-spec](https://github.com/horse-3903/beli-api-spec) and [ProjectBarks/beli-api](https://github.com/ProjectBarks/beli-api), which documented the API from captured traffic and the app's code. The read endpoints the exporter relies on were verified there against a live account. The unit tests run against mocked responses shaped like those captures. To check against your own account:
+Every endpoint used here comes from [beli-api-spec](https://github.com/horse-3903/beli-api-spec) and [ProjectBarks/beli-api](https://github.com/ProjectBarks/beli-api), which documented the API from captured traffic and the app's code. The read endpoints the exporter relies on were verified there against a live account.
+
+A private API changes without warning, so the repository watches for it:
+
+- The unit tests run against mocked responses and never touch the network.
+- A daily workflow logs in with a throwaway account, runs the live tests, and compares the shape of every response the exporter reads (field names and JSON types, no values) with the shapes stored in `tests/shapes/`. A difference opens an `api-drift` issue with the diff.
+- A weekly workflow compares the two upstream specs with `tests/upstream/` for the endpoints used here and opens an `upstream-change` issue if they moved.
+- Either issue starts a workflow that proposes a fix as a pull request. A person reviews and merges it.
+
+To check against your own account:
 
 ```bash
 beli login
 pytest -m live        # read-only
 ```
 
-If Beli changes something, please open an issue with the endpoint and the error.
+If Beli changes something before the daily check catches it, please open an issue with the endpoint and the error.
 
 ## Development
 
@@ -125,6 +156,8 @@ uv sync --group dev
 uv run pytest
 uv run ruff check . && uv run mypy
 ```
+
+Layout, rules and the repair procedure are in [CLAUDE.md](CLAUDE.md). Secrets, the CI account, the live recorders and releases are in [MAINTAINING.md](MAINTAINING.md).
 
 Requests, parsing, auth and retries are written once and shared by both clients. Only the thin public methods exist twice (`_resources.py` and `_async_resources.py`, `_client.py` and `_async_client.py`), and `tests/test_parity.py` fails if a pair differs in anything but `await`.
 
