@@ -172,22 +172,3 @@ def exporter_calls(beli: Beli, categories: list[str] | None = None) -> Iterator[
         yield capture
         if capture.fatal:
             return
-
-
-def replay_export(fixtures: dict[str, dict[str, Any]]) -> Any:
-    """Run the export plan against recorded fixtures instead of the network.
-
-    ``fixtures`` maps file stems to the entries ``record_fixtures.py`` writes.
-    Returns the :class:`beli.Export`. A request with no fixture is a ``KeyError``.
-    """
-    me = fixtures["user.logged-in"]["response"]["results"][0]["id"]
-    plan = plans.export(me, None, None)
-    result: Any = None
-    while True:
-        try:
-            request = plan.send(result)
-        except StopIteration as stop:
-            return stop.value
-        category = (request.params or {}).get("category")
-        name = slug(request, me) + (f".{category}" if category else "")
-        result = request.parse(fixtures[name]["response"])
