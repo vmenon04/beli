@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import stat
@@ -14,8 +15,10 @@ from beli import (
     AuthenticationError,
     BadRequestError,
     Beli,
+    BeliError,
     RateLimitError,
     ServerError,
+    UnexpectedResponseError,
 )
 from beli._constants import HOST_API, HOST_ONBOARD
 
@@ -185,6 +188,39 @@ def test_400_not_retried(api: respx.MockRouter) -> None:
     with pytest.raises(BadRequestError, match="Missing parameters"):
         client().photos.list()
     assert route.call_count == 1
+
+
+def test_changed_response_raises_one_clear_error(api: respx.MockRouter) -> None:
+    changed = {"id": 1, "business": "a-private-value", "picture": "https://example.com/1.jpg"}
+    api.get(f"{HOST_API}/api/user-business-photos/").respond(200, json={"results": [changed]})
+    with pytest.raises(UnexpectedResponseError) as info:
+        client().photos.list()
+    error = info.value
+    assert isinstance(error, BeliError)
+    assert (error.method, error.path) == ("GET", "/api/user-business-photos/")
+    assert "0.business (int_parsing)" in error.problem
+    assert "0.image (missing)" in error.problem
+    assert "upgrade beli" in str(error)
+    assert "a-private-value" not in str(error)
+    assert error.__cause__ is not None
+
+    # A parser that trips over the envelope itself is reported the same way.
+    api.get(f"{HOST_API}/api/user/streak/").respond(200, json={"result": "soon"})
+    with pytest.raises(UnexpectedResponseError) as info:
+        client().users.streak()
+    assert info.value.problem == "ValueError"
+    assert "soon" not in str(info.value)
+
+
+def test_changed_response_async(api: respx.MockRouter) -> None:
+    api.get(f"{HOST_API}/api/user-business-photos/").respond(200, json={"results": [{}]})
+
+    async def run() -> None:
+        async with AsyncBeli("me@example.com", "pw", min_interval=0) as beli:
+            await beli.photos.list()
+
+    with pytest.raises(UnexpectedResponseError, match="does not validate"):
+        asyncio.run(run())
 
 
 def test_read_only(api: respx.MockRouter) -> None:

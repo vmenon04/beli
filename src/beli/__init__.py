@@ -13,6 +13,7 @@ from .errors import (
     PermissionDeniedError,
     RateLimitError,
     ServerError,
+    UnexpectedResponseError,
 )
 from .export import Export
 
@@ -30,5 +31,6 @@ __all__ = [
     "RateLimitError",
     "ServerError",
     "Tokens",
+    "UnexpectedResponseError",
     "__version__",
 ]

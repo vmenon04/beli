@@ -18,7 +18,7 @@ from beli import Beli
 from beli import _plans as plans
 from beli._constants import HOSTS_PATH
 from beli._session import Request
-from beli.errors import APIError
+from beli.errors import APIError, UnexpectedResponseError, describe_parse_failure
 
 Shape = dict[str, list[str]]
 """JSON path to the sorted JSON types seen there, e.g. ``{"$.results[].id": ["number"]}``."""
@@ -109,11 +109,10 @@ def describe(exc: BaseException, me: str = "") -> str:
         # Mask the account's id, and any other id in the path, before it is printed.
         path = _UUID.sub("{user}", request.url.path.replace(me or "\0", "{user}"))
         return f"HTTP {exc.status_code} from {request.method} {path}"
+    if isinstance(exc, UnexpectedResponseError):
+        return exc.problem
     if isinstance(exc, ValidationError):
-        errors = exc.errors(include_input=False, include_url=False, include_context=False)
-        where = [f"{'.'.join(str(p) for p in e['loc'])} ({e['type']})" for e in errors[:20]]
-        more = f" and {len(errors) - 20} more" if len(errors) > 20 else ""
-        return f"{exc.title} does not validate: {', '.join(where)}{more}"
+        return describe_parse_failure(exc)
     return type(exc).__name__
 
 

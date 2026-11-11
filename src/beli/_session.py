@@ -38,13 +38,22 @@ from ._constants import (
     HOSTS_PATH,
     ORIGIN,
 )
-from .errors import APIError, AuthenticationError, error_for
+from .errors import (
+    APIError,
+    AuthenticationError,
+    UnexpectedResponseError,
+    describe_parse_failure,
+    error_for,
+)
 
 T = TypeVar("T")
 
 log = logging.getLogger("beli")
 
 RETRY_STATUSES = frozenset({429, 502, 503, 504})
+
+PARSE_FAILURES = (ValueError, LookupError, TypeError, AttributeError)
+"""What a parser raises when a response is not what it was written for."""
 
 AUTH_PATHS = frozenset({"/api/token/", "/api/token/refresh/"})
 """The only paths that may be sent anything other than a GET."""
@@ -369,7 +378,12 @@ class Session:
                 continue
             if response.status_code >= 400:
                 raise error_for(response)
-            return request.parse(decode(response))
+            try:
+                return request.parse(decode(response))
+            except PARSE_FAILURES as exc:
+                raise UnexpectedResponseError(
+                    "GET", request.path, describe_parse_failure(exc)
+                ) from exc
 
     def run(self, plan: Plan[T]) -> Flow[T]:
         """Send each request a plan yields and hand it the parsed result."""

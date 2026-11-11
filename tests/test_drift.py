@@ -173,3 +173,9 @@ def test_describe_never_quotes_the_response(api: respx.MockRouter) -> None:
     with pytest.raises(Exception) as info:
         Beli("me@example.com", "pw", min_interval=0).rankings.count()
     assert describe(info.value) == "HTTP 404 from GET /api/user-field-count/{user}/RANK/"
+    api.get(f"{HOST_API}/api/user-business-photos/").respond(200, json={"results": [{"id": "x"}]})
+    with pytest.raises(Exception) as info:
+        Beli("me@example.com", "pw", min_interval=0).photos.list()
+    assert describe(info.value) == (
+        "list[Photo] does not validate: 0.id (int_parsing), 0.business (missing), 0.image (missing)"
+    )

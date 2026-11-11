@@ -77,6 +77,16 @@ async with AsyncBeli.from_session() as beli:
     export.write("beli.json")
 ```
 
+### Errors
+
+Everything the package raises is a `BeliError`:
+
+| Error | When |
+|---|---|
+| `AuthenticationError` | Login failed, or there are no usable credentials. |
+| `APIError` and its subclasses (`BadRequestError`, `PermissionDeniedError`, `NotFoundError`, `RateLimitError`, `ServerError`) | The API answered with an error status. `status_code` and `body` are on the exception. |
+| `UnexpectedResponseError` | The API answered, but not in a form this version can read. Beli has probably changed something: upgrade, and if that does not help, open an issue. `problem` names the fields that did not fit and never quotes the response. |
+
 ### What's covered
 
 | Resource | Methods |
