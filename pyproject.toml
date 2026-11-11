@@ -50,7 +50,6 @@ packages = ["src/beli"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["scripts"]
 asyncio_mode = "auto"
 addopts = "-m 'not live'"
 markers = ["live: hits the real Beli API; needs BELI_EMAIL/BELI_PASSWORD or a saved session"]
@@ -58,7 +57,7 @@ markers = ["live: hits the real Beli API; needs BELI_EMAIL/BELI_PASSWORD or a sa
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-src = ["src", "scripts"]
+src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
