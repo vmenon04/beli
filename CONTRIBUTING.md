@@ -1,6 +1,6 @@
 # Contributing to beli
 
-Bug reports and pull requests are welcome. Beli's API is private and changes without notice, so the most useful contributions are fixes for endpoints that have changed.
+Bug reports and pull requests are encouraged and welcome. Because Beli's API is private and is subject to change without notice, the most useful contributions are fixes for endpoints that have changed.
 
 ## Setup
 
@@ -27,7 +27,7 @@ The unit tests use mocked responses and never touch the network.
 ## Ground rules
 
 - **The package is read-only.** The only requests that are not GETs are login and token refresh. Pull requests that add a write endpoint, or weaken the guard in `Transport._exchange` or its test (`test_read_only`), will not be merged.
-- **No account data in the repository.** Test responses are written by hand with made-up values. `tests/shapes/` holds field names and JSON types only.
+- **No account data in the repository.** Test responses are written by hand with made-up values.
 - **No tokens, passwords or response bodies in logs, test output or issues.** The message of an `APIError` quotes the response, so report the error type, status code and endpoint instead.
 - **One concern per commit**, with a message that says what changed and why.
 
@@ -47,11 +47,8 @@ src/beli/
   export.py       Export and the JSON / CSV / SQLite writers
   errors.py       every exception the package raises
   cli.py          the `beli` command
-scripts/
-  snapshot_shapes.py   records or checks tests/shapes/ against the live API
 tests/
   conftest.py     mock responses and the `api` fixture
-  shapes/         recorded response shapes, one file per endpoint
   test_live.py    the only tests that touch the network
 ```
 
@@ -64,27 +61,29 @@ A call such as `beli.rankings.list()` builds a `Request` with a function from `_
 3. Add the matching wrapper to `_async.py`. `tests/test_parity.py` fails until it exists with the same signature.
 4. Add a mock response to `tests/conftest.py` and a test.
 
-## Testing against the live API
+## Test against the live API
 
-The live tests only read, so they are safe to run on your own Beli account. They are skipped unless you ask for them.
+This is read-only. It is safe to run on your account.
 
 ```bash
 uv run beli login
 uv run pytest -m live -v
 ```
 
-CI cannot run these on a pull request, so say in the pull request whether you ran them.
+CI cannot run these on a pull request, so please indicate in the pull request that you've you ran them.
 
-## Fixing an API change
+## When Beli changes its API
 
-| Symptom | Where to fix it |
+A call raises an error, or the live tests fail.
+
+| Error | Fix |
 |---|---|
-| `NotFoundError` or `BadRequestError` from an endpoint | The endpoint moved or wants different parameters: its builder in `_endpoints.py`. |
-| `UnexpectedResponseError` naming a model and field | The response changed: the model in `models.py`. Make the field optional if it is `missing`, widen its type if it is a type error. |
-| `RateLimitError` or `ServerError` | Rate limiting or an outage. No code change. |
+| `HTTP 4xx from GET /api/...` | The endpoint may have moved or wants different parameters. Please fix it in `src/beli/_endpoints.py`. |
+| `<Model> does not validate: <field>` | A field may have changed. Please fix the model in `src/beli/models.py`. |
+| `HTTP 429` or `HTTP 5xx` | Rate limiting or an outage. Try again later. |
 
-Update the mock response in `tests/conftest.py` to match, add a test that would have failed before the fix, and run the live tests.
+I recommend to then updating the fake response in `tests/conftest.py`, run the live tests, and release a patch version.
 
 ## Reporting a bug
 
-Open an issue with the version (`pip show beli`), the call you made, and the error type and endpoint. Leave out tokens and the response body.
+Open an issue with the version (`pip show beli`), the call you made, and the error type and endpoint. Ensure that you leave out tokens and the response body.

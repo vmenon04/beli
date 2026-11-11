@@ -1,26 +1,5 @@
 # Maintaining beli
 
-## Test against the live API
-
-Read-only, and safe to run on your own account.
-
-```bash
-uv run beli login
-uv run pytest -m live -v
-```
-
-## When Beli changes its API
-
-A call raises an error, or the live tests fail.
-
-| Error | Fix |
-|---|---|
-| `HTTP 4xx from GET /api/...` | The endpoint moved or wants different parameters. Fix it in `src/beli/_endpoints.py`. |
-| `<Model> does not validate: <field>` | A field changed. Fix the model in `src/beli/models.py`. |
-| `HTTP 429` or `HTTP 5xx` | Rate limiting or an outage. Try again later. |
-
-Then update the fake response in `tests/conftest.py`, run the live tests, and release a patch version.
-
 ## Release
 
 1. Run the checks and the live tests.
@@ -33,18 +12,8 @@ Then update the fake response in `tests/conftest.py`, run the live tests, and re
 
 4. Approve the `pypi` environment when `release.yml` asks. It publishes to PyPI.
 
-## Daily check (optional)
+## Agentic Maintenance
 
-`live.yml` runs the live tests every day and opens an `api-drift` issue when they fail. It does nothing until you set it up:
+A long-term goal for this project is an agentic maintenance system, where AI agents notice Beli's API changes, propose and test the fix, and keep the package working with minimal human intervention. There is no automated check against the live API yet, because that needs a dedicated Beli account, and creating one requires a phone number. For now, bug reports are the signal: an `UnexpectedResponseError` names the endpoint and the fields that changed, which is enough to propose a fix.
 
-1. Create a throwaway Beli account with an email and password, and rank a few places on it. Do not use your own account: its password goes in a GitHub secret.
-2. Record what its responses look like (field names and types only) and commit the result:
-
-   ```bash
-   export BELI_SESSION_FILE=~/.config/beli/ci-session.json
-   uv run beli login --email <the account's email>
-   uv run python scripts/snapshot_shapes.py
-   unset BELI_SESSION_FILE
-   ```
-
-3. Add the repository secrets `BELI_CI_EMAIL` and `BELI_CI_PASSWORD`.
+Ideas, experience and insights that would help reach this goal are very welcome. Please [open an issue](https://github.com/vmenon04/beli/issues) or contact the primary maintainer, [@vmenon04](https://github.com/vmenon04).

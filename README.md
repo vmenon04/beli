@@ -26,7 +26,7 @@ beli login                # asks for your email and password
 beli export -f sqlite     # writes beli-export.db
 ```
 
-`-f` can be `json`, `csv` or `sqlite`. Each ranked place comes with its rank, score, name, city, cuisines, price, your note, visit dates, photo URLs and the guides it is in.
+The format flag `-f` can be set to `json`, `csv` or `sqlite`.
 
 ```bash
 sqlite3 beli-export.db "SELECT rank, score, name, note FROM rated LIMIT 10"
@@ -84,30 +84,23 @@ async with AsyncBeli.from_session() as beli:
 | `beli.users` | `get(user_id)`, `followers()`, `following()`, `streak()` |
 | `beli.places` | `search(term, city=...)`, `hours(business_id)`, `trending(category)` |
 
-Most methods take `user=` to read another user's data. `beli.get(path)` sends a GET to any other endpoint. Results are pydantic models from `beli.models`.
+Most methods take `user=` to read another user's data. `beli.get(path)` sends a GET to any other endpoint. The results are pydantic models from `beli.models`.
 
-Every exception is a `BeliError`. If Beli changes its API, you get an `UnexpectedResponseError`: upgrade, or [open an issue](https://github.com/vmenon04/beli/issues).
+Every exception is a `BeliError`. If Beli changes its API, you may get an `UnexpectedResponseError`: upgrade, or [open an issue](https://github.com/vmenon04/beli/issues).
 
 ## Authentication
 
 `beli login` saves a session token to `~/.config/beli/session.json`. Your password is never stored. The session lasts about a week between uses.
 
-If you sign in to Beli with Apple or Google, your account has no password. Capture a refresh token from the app's traffic and run `beli login --token <refresh token>`.
+If you sign in to Beli with Apple or Google, you will need to capture a refresh token from the app's traffic and run `beli login --token <refresh token>`.
 
 ## Notes
 
-- **Read-only.** Nothing here can change your account.
-- **Rate limits.** Requests are spaced one second apart and retried when Beli asks you to slow down.
-- **Versions.** Until 1.0, minor releases can change behaviour. See the [changelog](CHANGELOG.md).
+For now, this implementation is read-only. Requests are also spaced one second apart and retried when Beli asks you to slow down. Future releases may include breaking changes, please check the changelog (CHANGELOG.md) before upgrading.
 
 ## Development
 
-```bash
-uv sync --group dev
-uv run ruff check . && uv run mypy && uv run pytest
-```
-
-See [MAINTAINING.md](MAINTAINING.md) for live tests and releases.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [MAINTAINING.md](MAINTAINING.md).
 
 ## Credits
 

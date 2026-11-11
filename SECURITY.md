@@ -14,5 +14,3 @@ Reports are especially welcome for anything that could:
 
 - expose a token, password or session file (in logs, error messages, files written with loose permissions, or requests sent to the wrong host);
 - make the package send a request that changes an account. It is meant to be read-only.
-
-A change on Beli's side that breaks an endpoint is a bug, not a vulnerability: open a normal issue.
