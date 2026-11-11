@@ -28,6 +28,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/vmenon04/beli"
 Issues = "https://github.com/vmenon04/beli/issues"
+Changelog = "https://github.com/vmenon04/beli/blob/main/CHANGELOG.md"
 
 [project.scripts]
 beli = "beli.cli:main"

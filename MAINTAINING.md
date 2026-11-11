@@ -132,9 +132,10 @@ GitHub does not start workflows for pull requests opened with the built-in token
 
 1. `main` is green, and the latest "Live API check" run passed.
 2. Set the new version in `src/beli/_version.py`. While the version is 0.x, anything that changes behaviour for existing users is a minor bump.
-3. `uv run ruff check . && uv run mypy && uv run pytest`, then `uv build` and look at the contents of `dist/`.
-4. Commit (`Release 0.2.0`), open a pull request, merge.
-5. Tag the merge commit and push the tag:
+3. In `CHANGELOG.md`, check the entry for this version covers everything users will notice and remove "(unreleased)" from its heading.
+4. `uv run ruff check . && uv run mypy && uv run pytest`, then `uv build` and look at the contents of `dist/`.
+5. Commit (`Release 0.2.0`), open a pull request, merge.
+6. Tag the merge commit and push the tag:
 
    ```bash
    git switch main && git pull
@@ -142,12 +143,5 @@ GitHub does not start workflows for pull requests opened with the built-in token
    git push origin v0.2.0
    ```
 
-6. Approve the `pypi` environment when `release.yml` asks. It builds and publishes with trusted publishing.
-7. Check `pip install beli==0.2.0` in a clean environment, then write the GitHub release notes.
-
-Changes since 0.1.0 that users will notice, for the next set of notes:
-
-- `rankings.list()` and `rankings.all()` return the API's order. Pass `sort="score"` for best first.
-- Credentials come from one source: constructor arguments, then the session file, then the environment. A saved session now beats `BELI_REFRESH_TOKEN`, and `Beli(email=...)` no longer takes its password from `BELI_PASSWORD`.
-- Hosts are discovered from `/api/api-hosts/` (one extra request per client; `discover_hosts=False` to skip).
-- Token refresh is safe to use from several threads.
+7. Approve the `pypi` environment when `release.yml` asks. It builds and publishes with trusted publishing.
+8. Check `pip install beli==0.2.0` in a clean environment, then paste the changelog entry into the GitHub release notes.
