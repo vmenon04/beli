@@ -8,7 +8,7 @@ import respx
 
 from beli import AsyncBeli, Beli
 from beli._constants import FALLBACK_HOSTS, HOST_API, HOST_ONBOARD, HOST_RECS
-from beli._session import parse_hosts
+from beli._transport import parse_hosts
 
 NEW_API = "https://api.beli.example"
 HOSTS_URL = f"{HOST_API}/api/api-hosts/"
@@ -59,7 +59,7 @@ def test_any_discovery_failure_falls_back(api: respx.MockRouter, answer: Any) ->
         assert beli.rankings.count() == 2
         assert beli.rankings.count() == 2
     assert hosts.call_count == 1  # not retried, and not asked again
-    assert beli._transport.session.hosts == FALLBACK_HOSTS
+    assert beli._transport.hosts == FALLBACK_HOSTS
 
 
 def test_discovery_can_be_turned_off(api: respx.MockRouter) -> None:

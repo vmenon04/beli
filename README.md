@@ -164,7 +164,7 @@ The public API is:
 - the models in `beli.models`;
 - the `beli` command and its options.
 
-Modules and names that start with an underscore (`beli._session`, `beli._endpoints`, ...) are internal and can change in any release.
+Modules and names that start with an underscore (`beli._transport`, `beli._endpoints`, ...) are internal and can change in any release.
 
 While the version is 0.x, a minor release (0.2 to 0.3) can change behaviour and a patch release (0.2.0 to 0.2.1) does not. Pin `beli>=0.2,<0.3` if you depend on it. Every change users will notice is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -181,7 +181,7 @@ uv run ruff check . && uv run mypy
 
 The layout and rules are in [CLAUDE.md](CLAUDE.md). The daily check, what to do when the API changes, and releases are in [MAINTAINING.md](MAINTAINING.md).
 
-Requests, parsing, auth and retries are written once and shared by both clients. Only the thin public methods exist twice (`_resources.py` and `_async_resources.py`, `_client.py` and `_async_client.py`), and `tests/test_parity.py` fails if a pair differs in anything but `await`.
+There is one implementation of the client. `AsyncBeli` runs it on a background thread, and `tests/test_parity.py` fails if it is missing a method.
 
 ## Credits
 

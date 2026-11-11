@@ -1,22 +1,21 @@
-"""The sync client. ``_async_client`` mirrors this file method for method.
-
-``tests/test_parity.py`` fails if the two differ in anything but ``await``.
-"""
+"""The ``Beli`` client."""
 
 from __future__ import annotations
 
 import os
 from collections.abc import Callable
+from functools import partial
+from pathlib import Path
 from types import TracebackType
 from typing import Any
 
 import httpx
 
 from . import _endpoints as ep
-from . import _plans as plans
-from ._auth import Tokens, default_session_path
+from ._auth import Tokens, default_session_path, find_credentials
 from ._resources import Bookmarks, Guides, Notes, Photos, Places, Rankings, Scores, Users
-from ._transport import Config, SyncTransport
+from ._transport import Transport
+from .errors import APIError
 from .export import Export
 from .models import Category, User
 
@@ -64,20 +63,25 @@ class Beli:
         discover_hosts: bool = True,
         http_client: httpx.Client | None = None,
     ) -> None:
-        config = Config.build(
+        path = Path(session_file).expanduser() if session_file is not None else None
+        credentials = find_credentials(
             email=email,
             phone=phone,
             password=password,
             access_token=access_token,
             refresh_token=refresh_token,
-            session_file=session_file,
+            session_file=path,
+        )
+        self._transport = Transport(
+            credentials,
+            session_file=path,
             min_interval=min_interval,
             max_retries=max_retries,
             timeout=timeout,
             user_agent=user_agent,
             discover_hosts=discover_hosts,
+            http=http_client,
         )
-        self._transport = SyncTransport(config, http_client)
         self.rankings = Rankings(self._transport)
         self.scores = Scores(self._transport)
         self.notes = Notes(self._transport)
@@ -99,11 +103,11 @@ class Beli:
     @property
     def tokens(self) -> Tokens:
         """Current tokens. Save ``tokens.refresh`` to resume for about a week without a password."""
-        return self._transport.config.tokens
+        return self._transport.tokens
 
     @property
     def user_id(self) -> str:
-        """Your user id. A property here; ``await beli.user_id()`` on the async client."""
+        """Your user id."""
         return self._transport.user_id()
 
     def me(self) -> User:
@@ -130,8 +134,41 @@ class Beli:
         *,
         on_progress: Callable[[str], None] | None = None,
     ) -> Export:
-        """Fetch rankings, notes, photos, bookmarks and guides in one go."""
-        return self._transport.run(plans.export(self._transport.user_id(), categories, on_progress))
+        """Fetch rankings, notes, photos, bookmarks and guides in one go.
+
+        Rankings and notes are required. If one of the other parts fails, the
+        export carries on and the failure is listed in ``export.warnings``.
+        ``on_progress`` is called with a short label before each step.
+        """
+        export = Export(user=self.me())
+        step = on_progress or (lambda _label: None)
+
+        def optional(label: str, fetch: Callable[[], Any], default: Any) -> Any:
+            step(label)
+            try:
+                return fetch()
+            except APIError as exc:
+                export.warnings.append(f"{label}: {exc}")
+                return default
+
+        if categories is None:
+            step("categories")
+            categories = [c.code for c in self.categories()] or ["RES"]
+        for code in categories:
+            step(f"rankings {code}")
+            export.rankings += self.rankings.list(code)
+        step("notes")
+        export.notes = self.notes.list()
+
+        export.photos = optional("photos", self.photos.list, [])
+        for code in categories:
+            export.bookmarks += optional(
+                f"bookmarks {code}", partial(self.bookmarks.list, code), []
+            )
+        export.guides = optional("guides", self.guides.list, [])
+        export.guide_items = optional("guide items", self.guides.items, [])
+        export.averages = optional("averages", self.scores.averages, None)
+        return export
 
     def close(self) -> None:
         self._transport.close()

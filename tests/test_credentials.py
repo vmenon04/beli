@@ -10,8 +10,7 @@ import pytest
 import respx
 
 from beli import AuthenticationError, Beli
-from beli._auth import Tokens, save_tokens
-from beli._session import find_credentials
+from beli._auth import Tokens, find_credentials, save_tokens
 
 from .conftest import make_jwt
 

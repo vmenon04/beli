@@ -1,4 +1,4 @@
-"""The drift scripts, run against the mocked API. Nothing here touches the network."""
+"""scripts/snapshot_shapes.py, run against the mocked API. Nothing here touches the network."""
 
 from __future__ import annotations
 
@@ -9,12 +9,12 @@ import pytest
 import respx
 
 import snapshot_shapes
-from _drift import describe, diff_shapes, exporter_calls, merge, shape_of
 from beli import Beli
 from beli._auth import Tokens, save_tokens
 from beli._constants import HOST_API
+from snapshot_shapes import describe, diff_shapes, merge, shape_of
 
-from .conftest import RANKINGS_RES, USER_ID, business, make_jwt
+from .conftest import USER_ID, business, make_jwt
 
 
 @pytest.fixture
@@ -61,28 +61,6 @@ def test_merge_and_diff() -> None:
     diff = "\n".join(diff_shapes(old, new, "x.json"))
     assert "-$.a: number" in diff and "+$.a: string" in diff
     assert "-$.b: string" in diff and "+$.c: null" in diff
-
-
-def test_exporter_calls_cover_the_export(api: respx.MockRouter, session: Path) -> None:
-    with Beli.from_session(session, min_interval=0) as beli:
-        captures = list(exporter_calls(beli))
-    assert [c.label for c in captures] == [
-        "GET /api/api-hosts/",
-        "GET /api/user/logged-in/",
-        "GET /api/user-setting/",
-        "GET /api/get-ranking/",
-        "GET /api/get-ranking/",
-        "GET /api/datauserbusinesstext-sparse/",
-        "GET /api/user-business-photos/",
-        "GET /api/get-bookmark/",
-        "GET /api/get-bookmark/",
-        "GET /api/user-guide/",
-        "GET /api/user-guide-items/",
-        "GET /api/score-average/{user}/ALL/",
-    ]
-    assert captures[-1].name == "score-average.USER.ALL"
-    assert all(c.error is None and c.raw is not None for c in captures)
-    assert captures[3].raw == RANKINGS_RES  # raw JSON, not models
 
 
 def test_snapshot_write_then_check(
@@ -133,7 +111,7 @@ def test_snapshot_check_reports_drift_readably(
     assert "### GET /api/get-ranking/" in out
     assert "+$.results[].rank_position: number" in out
     assert "-$.results[].score: number" in out and "+$.results[].score: number | string" in out
-    assert "- GET /api/user-business-photos/: HTTP 500 from GET /api/user-business-photos/" in out
+    assert "- GET /api/user-business-photos/: HTTP 500" in out
     assert "Stored, but no response this run." in out
     for value in ("Renamed Secret Place", "private body text", USER_ID):
         assert value not in out
@@ -167,7 +145,7 @@ def test_describe_never_quotes_the_response(api: respx.MockRouter) -> None:
     api.get(f"{HOST_API}/api/user-business-photos/").respond(400, text="body with secrets")
     with pytest.raises(Exception) as info:
         Beli("me@example.com", "pw", min_interval=0).photos.list()
-    assert describe(info.value, USER_ID) == "HTTP 400 from GET /api/user-business-photos/"
+    assert describe(info.value) == "HTTP 400 from GET /api/user-business-photos/"
     assert describe(RuntimeError("secret detail")) == "RuntimeError"
     api.get(f"{HOST_API}/api/user-field-count/{USER_ID}/RANK/").respond(404)
     with pytest.raises(Exception) as info:
@@ -177,5 +155,6 @@ def test_describe_never_quotes_the_response(api: respx.MockRouter) -> None:
     with pytest.raises(Exception) as info:
         Beli("me@example.com", "pw", min_interval=0).photos.list()
     assert describe(info.value) == (
-        "list[Photo] does not validate: 0.id (int_parsing), 0.business (missing), 0.image (missing)"
+        "GET /api/user-business-photos/: list[Photo] does not validate: "
+        "0.id (int_parsing), 0.business (missing), 0.image (missing)"
     )

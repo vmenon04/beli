@@ -11,8 +11,8 @@ from typing import Any
 import pytest
 import respx
 
-from _drift import describe
 from beli._constants import HOST_API, HOST_ONBOARD, HOST_RECS
+from snapshot_shapes import describe
 
 USER_ID = "bd6fbeef-31f0-4836-9199-69836572e74c"
 

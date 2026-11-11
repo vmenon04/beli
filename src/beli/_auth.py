@@ -1,4 +1,4 @@
-"""JWT handling and on-disk session storage.
+"""Tokens, the session file, and where credentials come from.
 
 Beli uses SimpleJWT: ``POST /api/token/`` returns an access token (about 20
 minutes) and a refresh token (about 7 days, not rotated on refresh).
@@ -8,13 +8,17 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 import time
-from dataclasses import asdict, dataclass
+from collections.abc import Mapping
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
 from .errors import AuthenticationError
+
+log = logging.getLogger("beli")
 
 
 def decode_claims(token: str) -> dict[str, Any]:
@@ -79,3 +83,87 @@ def save_tokens(path: Path, tokens: Tokens) -> None:
     with os.fdopen(fd, "w") as fh:
         json.dump(asdict(tokens), fh)
     os.replace(tmp, path)
+
+
+@dataclass(frozen=True)
+class Credentials:
+    """What a client was given to authenticate with, and where it came from."""
+
+    source: str
+    email: str | None = None
+    phone: str | None = None
+    password: str | None = None
+    tokens: Tokens = field(default_factory=Tokens)
+
+    def login_body(self) -> dict[str, str]:
+        """The body for ``POST /api/token/``. Raises if there is no password to log in with."""
+        if not self.password or not (self.email or self.phone):
+            raise AuthenticationError(
+                f"No usable session (credentials came from {self.source}). Pass email (or "
+                "phone) and password, a refresh_token, or run `beli login`."
+            )
+        if self.email:
+            return {"password": self.password, "email": self.email}
+        return {"password": self.password, "phone_no": self.phone or ""}
+
+
+def find_credentials(
+    *,
+    email: str | None = None,
+    phone: str | None = None,
+    password: str | None = None,
+    access_token: str | None = None,
+    refresh_token: str | None = None,
+    session_file: Path | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> Credentials:
+    """Choose where credentials come from. The first source that has any wins outright.
+
+    1. Constructor arguments, if any credential argument was passed.
+    2. The session file, if one was named and it holds a token that has not expired.
+    3. The environment: ``BELI_REFRESH_TOKEN``, or ``BELI_PASSWORD`` with
+       ``BELI_EMAIL`` or ``BELI_PHONE``.
+
+    Sources are never mixed: an email argument is not completed with
+    ``BELI_PASSWORD``, and a session file is not backed up by a password from
+    the environment.
+    """
+    found = _find(email, phone, password, access_token, refresh_token, session_file, environ)
+    log.debug("credentials: using %s", found.source)
+    return found
+
+
+def _find(
+    email: str | None,
+    phone: str | None,
+    password: str | None,
+    access_token: str | None,
+    refresh_token: str | None,
+    session_file: Path | None,
+    environ: Mapping[str, str] | None,
+) -> Credentials:
+    if email or phone or password or access_token or refresh_token:
+        tokens = Tokens(access=access_token or "", refresh=refresh_token or "")
+        return Credentials(
+            "constructor arguments", email or None, phone or None, password or None, tokens
+        )
+
+    if session_file is not None:
+        stored = load_tokens(session_file)
+        if stored is None:
+            log.debug("credentials: no session file at %s", session_file)
+        elif is_expired(stored.refresh, skew=0) and is_expired(stored.access):
+            log.debug("credentials: the session in %s has expired", session_file)
+        else:
+            return Credentials(f"session file {session_file}", tokens=stored)
+
+    env = os.environ if environ is None else environ
+    env_email = env.get("BELI_EMAIL") or None
+    env_phone = env.get("BELI_PHONE") or None
+    env_password = env.get("BELI_PASSWORD") or None
+    env_refresh = env.get("BELI_REFRESH_TOKEN", "")
+    if env_refresh or (env_password and (env_email or env_phone)):
+        return Credentials(
+            "environment variables", env_email, env_phone, env_password, Tokens(refresh=env_refresh)
+        )
+    return Credentials("nothing")

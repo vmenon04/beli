@@ -4,9 +4,12 @@
     python scripts/snapshot_shapes.py --check    # compare, exit 1 on any difference
 
 This talks to the live Beli API with the session saved by ``beli login`` (or
-the BELI_* environment variables). It only reads. A shape is the set of JSON
-paths in a response and the JSON types seen at each one: field names and
-types, never values. Nothing else about a response is printed or stored.
+the BELI_* environment variables). It only reads: it runs ``Beli.export()``
+and looks at each response on the way past.
+
+A shape is the set of JSON paths in a response and the JSON types seen at
+each one: field names and types, never values. Nothing else about a response
+is printed or stored.
 
 Shapes depend on the account's data (an empty list has no element fields, a
 field that is always null is only ever "null"), so record and check with the
@@ -16,38 +19,149 @@ same account.
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
 
-from _drift import diff_shapes, exporter_calls, merge, shape_of
-from beli import Beli, BeliError
-from beli._auth import default_session_path
+import httpx
+
+from beli import APIError, Beli, BeliError, UnexpectedResponseError
 
 ROOT = Path(__file__).resolve().parent.parent
 SHAPES = ROOT / "tests" / "shapes"
 
+Shape = dict[str, list[str]]
+"""JSON path to the sorted JSON types seen there, e.g. ``{"$.results[].id": ["number"]}``."""
+
 Entries = dict[str, dict[str, Any]]
 """File stem to ``{"endpoint": "GET /api/...", "shape": {...}}``."""
 
+_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I)
 
-def collect(beli: Beli, categories: list[str] | None) -> tuple[Entries, list[str], bool]:
-    """Returns the shapes, a list of problems, and whether the run was cut short."""
+
+# Shapes
+
+
+def _type(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, (int, float)):
+        # 8 and 8.0 are the same JSON number; which one arrives depends on the data.
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    if isinstance(value, list):
+        return "array"
+    if isinstance(value, dict):
+        return "object"
+    raise TypeError(f"not a JSON value: {type(value).__name__}")
+
+
+def shape_of(data: Any) -> Shape:
+    """Flatten a JSON value into path -> types. Array elements are merged under ``[]``."""
+    seen: dict[str, set[str]] = {}
+
+    def walk(value: Any, path: str) -> None:
+        seen.setdefault(path, set()).add(_type(value))
+        if isinstance(value, dict):
+            for key, item in value.items():
+                # Field names are kept. Keys that are data (ids used as map keys) become ``*``.
+                name = "*" if key.isdigit() or _UUID.fullmatch(key) else key
+                walk(item, f"{path}.{name}")
+        elif isinstance(value, list):
+            for item in value:
+                walk(item, f"{path}[]")
+
+    walk(data, "$")
+    return {path: sorted(types) for path, types in sorted(seen.items())}
+
+
+def merge(a: Shape, b: Shape) -> Shape:
+    return {path: sorted({*a.get(path, []), *b.get(path, [])}) for path in sorted({*a, *b})}
+
+
+def diff_shapes(old: Shape, new: Shape, name: str) -> list[str]:
+    """Unified diff of two shapes, empty if they are the same."""
+
+    def lines(shape: Shape) -> list[str]:
+        return [f"{path}: {' | '.join(types)}" for path, types in shape.items()]
+
+    return list(
+        difflib.unified_diff(
+            lines(old), lines(new), f"stored/{name}", f"live/{name}", lineterm="", n=1
+        )
+    )
+
+
+# Saying what happened without quoting a response
+
+
+def _mask(path: str) -> str:
+    """A request path with every user id replaced, so it is safe to publish."""
+    return _UUID.sub("{user}", path)
+
+
+def describe(exc: BaseException) -> str:
+    """Say what went wrong without quoting any of the response.
+
+    ``str()`` of an ``APIError`` includes the response body, so reports that
+    are printed in CI or posted to an issue use this instead.
+    """
+    if isinstance(exc, APIError):
+        request = exc.response.request
+        return f"HTTP {exc.status_code} from {request.method} {_mask(request.url.path)}"
+    if isinstance(exc, UnexpectedResponseError):
+        return f"{exc.method} {_mask(exc.path)}: {exc.problem}"
+    return type(exc).__name__
+
+
+# Running the export and collecting shapes
+
+
+def collect(
+    session: str | None, interval: float, categories: list[str] | None
+) -> tuple[Entries, list[str], bool]:
+    """Run an export. Returns the shapes, a list of problems, and whether it was cut short."""
     shapes: Entries = {}
-    problems: list[str] = []
+    failed: dict[str, str] = {}  # URL to problem, removed again if a retry succeeds
+
+    def look(response: httpx.Response) -> None:
+        request = response.request
+        if request.method != "GET":
+            return  # login and token refresh
+        url, path = str(request.url), _mask(request.url.path)
+        endpoint = f"GET {path}"
+        if response.status_code != 200:
+            failed[url] = f"{endpoint}: HTTP {response.status_code}"
+            return
+        failed.pop(url, None)
+        response.read()
+        try:
+            shape = shape_of(response.json() if response.content else None)
+        except ValueError:
+            failed[url] = f"{endpoint}: the response is not JSON"
+            return
+        name = path.removeprefix("/api/").strip("/").replace("/", ".").replace("{user}", "USER")
+        if name in shapes:
+            shape = merge(shapes[name]["shape"], shape)
+        shapes[name] = {"endpoint": endpoint, "shape": shape}
+
     cut_short = False
-    for capture in exporter_calls(beli, categories):
-        if capture.error:
-            problems.append(f"{capture.label}: {capture.error}")
-        cut_short = cut_short or capture.fatal
-        if capture.error and capture.raw is None:
-            continue
-        shape = shape_of(capture.raw)
-        if capture.name in shapes:
-            shape = merge(shapes[capture.name]["shape"], shape)
-        shapes[capture.name] = {"endpoint": capture.label, "shape": shape}
-    return shapes, problems, cut_short
+    http = httpx.Client(timeout=30, event_hooks={"response": [look]})
+    with http, Beli.from_session(session, min_interval=interval, http_client=http) as beli:
+        try:
+            beli.export(categories)
+        except (APIError, UnexpectedResponseError) as exc:
+            # A part the exporter cannot do without failed, or no longer parses.
+            cut_short = True
+            if isinstance(exc, UnexpectedResponseError):
+                failed["parse"] = f"response no longer parses: {describe(exc)}"
+    return shapes, list(failed.values()), cut_short
 
 
 def write(shapes: Entries, directory: Path) -> list[str]:
@@ -83,7 +197,7 @@ def check(shapes: Entries, directory: Path, cut_short: bool) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     parser.add_argument("--check", action="store_true", help="compare instead of writing")
-    parser.add_argument("--session", default=str(default_session_path()), help="session file")
+    parser.add_argument("--session", help="session file (default: the one `beli login` wrote)")
     parser.add_argument("--interval", type=float, default=2.0, help="seconds between requests")
     parser.add_argument("--categories", help="comma-separated codes (default: the account's)")
     parser.add_argument("--dir", type=Path, default=SHAPES, help="where the shapes live")
@@ -95,10 +209,8 @@ def main(argv: list[str] | None = None) -> int:
 
     report: list[str] = []
     try:
-        with Beli.from_session(args.session, min_interval=args.interval) as beli:
-            shapes, problems, cut_short = collect(beli, categories)
+        shapes, problems, cut_short = collect(args.session, args.interval, categories)
     except BeliError as exc:
-        # The message of an API error quotes the response, so name the type only.
         report = [f"Could not read the API: {type(exc).__name__}"]
         failed = True
     else:
