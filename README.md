@@ -157,6 +157,20 @@ pytest -m live        # read-only
 
 If Beli changes something before the daily check catches it, please open an issue with the endpoint and the error.
 
+## What you can rely on
+
+The public API is:
+
+- everything importable from `beli` itself: `Beli`, `AsyncBeli`, `Export`, `Tokens`, `CATEGORY_NAMES` and the errors;
+- the models in `beli.models`;
+- the `beli` command and its options.
+
+Modules and names that start with an underscore (`beli._session`, `beli._endpoints`, ...) are internal and can change in any release.
+
+While the version is 0.x, a minor release (0.2 to 0.3) can change behaviour and a patch release (0.2.0 to 0.2.1) does not. Pin `beli>=0.2,<0.3` if you depend on it. Every change users will notice is in [CHANGELOG.md](CHANGELOG.md).
+
+One thing no version number can promise: Beli can change its API at any time. Fields on the models can become optional or disappear when it does, and a release that follows such a change may be a patch release. Fields this package does not know about are kept on each model in `model_extra`.
+
 ## Development
 
 ```bash
