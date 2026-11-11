@@ -14,7 +14,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel, TypeAdapter
 
 from ._constants import GUIDE_FLAGS, HOST_ONBOARD, NOTES_FIELD
-from ._transport import ME, Request
+from ._session import ME, Request
 from .models import (
     Bookmark,
     BusinessHours,
@@ -121,11 +121,15 @@ def streak(user: str | None) -> Request[int]:
 
 
 def rankings(category: str, user: str | None) -> Request[list[Ranking]]:
+    def parse(data: Any) -> list[Ranking]:
+        items = list_of(Ranking)(data)
+        return sorted(items, key=lambda r: r.score if r.score is not None else -1, reverse=True)
+
     return Request(
         "GET",
         "/api/get-ranking/",
         params={"user": user_param(user), "category": category},
-        parse=list_of(Ranking),
+        parse=parse,
     )
 
 
@@ -169,6 +173,17 @@ def notes(user: str | None, business_id: int | None) -> Request[list[Note]]:
         return [n for n in items if n.end_dt is None]
 
     return Request("GET", "/api/datauserbusinesstext-sparse/", params=params, parse=parse)
+
+
+def note_text(user: str | None, business_id: int) -> Request[str | None]:
+    """The current note on one place, or ``None``."""
+    request = notes(user, business_id)
+
+    def parse(data: Any) -> str | None:
+        matching = [n for n in request.parse(data) if n.business == business_id]
+        return matching[-1].value if matching else None
+
+    return Request("GET", request.path, params=request.params, parse=parse)
 
 
 def photos(user: str | None) -> Request[list[Photo]]:

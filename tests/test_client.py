@@ -152,7 +152,7 @@ def test_400_not_retried(api: respx.MockRouter) -> None:
 
 
 def test_read_only(api: respx.MockRouter) -> None:
-    from beli._transport import Request
+    from beli._session import Call, Request
 
     beli = client()
     for resource, name in [
@@ -163,7 +163,17 @@ def test_read_only(api: respx.MockRouter) -> None:
     ]:
         assert not hasattr(resource, name)
     with pytest.raises(ValueError, match="read-only"):
-        beli._transport.send(Request("POST", "/api/add-bookmark/", json={}))
+        beli._transport.send(Request("POST", "/api/add-bookmark/"))
+    # The guard sits on the effect every request becomes, so nothing can go around it.
+    for method, path, body in [
+        ("POST", "/api/add-bookmark/", {}),
+        ("DELETE", "/api/rank/1/", None),
+        ("PUT", "/api/token/", {}),
+        ("GET", "/api/get-ranking/", {"smuggled": "body"}),
+    ]:
+        with pytest.raises(ValueError, match="read-only"):
+            Call(method, HOST_API + path, json=body)
+    Call("POST", HOST_ONBOARD + "/api/token/refresh/", json={"refresh": "x"})
     assert not any(
         c.request.method != "GET" and "token" not in c.request.url.path for c in api.calls
     )
@@ -205,15 +215,24 @@ async def test_async_client(api: respx.MockRouter) -> None:
     assert len(export.rated_places()) == 3
 
 
-def test_async_resources_are_generated() -> None:
-    import subprocess
-    import sys
+async def test_async_transport_retries_and_reauths(
+    api: respx.MockRouter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    slept: list[float] = []
 
-    root = Path(__file__).resolve().parent.parent
-    result = subprocess.run(
-        [sys.executable, "scripts/gen_async.py", "--check"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, result.stdout
+    async def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr("asyncio.sleep", fake_sleep)
+    route = api.get(f"{HOST_API}/api/user-business-photos/")
+    route.side_effect = [
+        httpx.Response(429, headers={"Retry-After": "7"}),
+        httpx.Response(401),
+        httpx.ConnectError("down"),
+        httpx.Response(200, json={"results": []}),
+    ]
+    async with AsyncBeli("me@example.com", "pw", min_interval=0) as beli:
+        assert await beli.photos.list() == []
+    assert route.call_count == 4
+    assert slept == [7.0, 4.0]
+    assert [c.request.url.path for c in api.calls].count("/api/token/refresh/") == 1

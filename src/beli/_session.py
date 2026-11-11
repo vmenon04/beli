@@ -1,0 +1,344 @@
+"""Everything the clients do, with the I/O left out.
+
+Nothing in this module sleeps, takes a lock or touches the network. A
+:class:`Session` describes the work as generators ("flows") that yield
+effects and receive their results:
+
+* :class:`Call` asks for one HTTP exchange and gets back an
+  ``httpx.Response``, or the ``httpx.TransportError`` if it never completed.
+* :class:`Sleep` asks to wait.
+* :class:`Exclusive` asks for another flow to be run while holding the
+  transport's auth lock, and gets back that flow's return value.
+
+``_transport`` has the two small loops that carry the effects out, one
+blocking and one with ``await``. Login, token refresh, retries and the
+read-only guard therefore exist once, and the sync and async clients cannot
+behave differently.
+"""
+
+from __future__ import annotations
+
+import os
+import time
+from collections.abc import Callable, Generator, Mapping
+from dataclasses import dataclass, field, replace
+from email.utils import parsedate_to_datetime
+from pathlib import Path
+from typing import Any, Generic, TypeVar
+
+import httpx
+
+from ._auth import Tokens, is_expired, save_tokens
+from ._constants import DEFAULT_USER_AGENT, HOST_API, HOST_ONBOARD, ORIGIN
+from .errors import APIError, AuthenticationError, error_for
+
+T = TypeVar("T")
+
+ME = "__BELI_ME__"
+"""Stand-in for the logged-in user's id. Resolved after authentication."""
+
+RETRY_STATUSES = frozenset({429, 502, 503, 504})
+
+AUTH_PATHS = frozenset({"/api/token/", "/api/token/refresh/"})
+"""The only paths that may be sent anything other than a GET."""
+
+
+def _identity(data: Any) -> Any:
+    return data
+
+
+@dataclass(frozen=True)
+class Request(Generic[T]):
+    """One read of the API: where to GET and how to parse the answer."""
+
+    method: str
+    path: str
+    params: Mapping[str, Any] | None = None
+    host: str = HOST_API
+    parse: Callable[[Any], T] = field(default=_identity)
+
+    def resolve(self, user_id: str | None) -> Request[T]:
+        if user_id is None:
+            return self
+
+        def sub(value: Any) -> Any:
+            if isinstance(value, str):
+                return value.replace(ME, user_id)
+            if isinstance(value, Mapping):
+                return {k: sub(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [sub(v) for v in value]
+            return value
+
+        return replace(
+            self,
+            path=sub(self.path),
+            params=sub(self.params) if self.params is not None else None,
+        )
+
+    @property
+    def needs_user(self) -> bool:
+        return ME in repr((self.path, self.params))
+
+
+@dataclass(frozen=True)
+class Call:
+    """Effect: perform one HTTP exchange.
+
+    This is the read-only guard. Every request either client sends is a
+    ``Call``, and one that is not a GET, or a POST to login or token refresh,
+    cannot be constructed.
+    """
+
+    method: str
+    url: str
+    params: Mapping[str, Any] | None = None
+    json: Any = None
+    headers: Mapping[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        path = httpx.URL(self.url).path
+        if self.method == "GET" and self.json is None:
+            return
+        if self.method == "POST" and path in AUTH_PATHS:
+            return
+        raise ValueError(f"beli is read-only; refusing {self.method} {path}")
+
+
+@dataclass(frozen=True)
+class Sleep:
+    """Effect: wait this many seconds."""
+
+    seconds: float
+
+
+@dataclass(frozen=True)
+class Exclusive:
+    """Effect: run ``flow`` while holding the auth lock and reply with its result."""
+
+    flow: Generator[Any, Any, Any]
+
+
+Effect = Call | Sleep | Exclusive
+Flow = Generator[Effect, Any, T]
+"""A unit of work for a transport to carry out. Returns ``T`` when exhausted."""
+
+Plan = Generator[Request[Any], Any, T]
+"""Several requests in a row: yields each one and receives its parsed result.
+
+An :class:`~beli.errors.APIError` from a request is thrown into the plan at
+the ``yield``, so a plan can decide that a part is optional.
+"""
+
+
+@dataclass
+class Config:
+    email: str | None = None
+    phone: str | None = None
+    password: str | None = None
+    tokens: Tokens = field(default_factory=Tokens)
+    session_file: Path | None = None
+    min_interval: float = 1.0
+    max_retries: int = 4
+    timeout: float = 30.0
+    user_agent: str = DEFAULT_USER_AGENT
+
+    @classmethod
+    def build(
+        cls,
+        *,
+        email: str | None,
+        phone: str | None,
+        password: str | None,
+        access_token: str | None,
+        refresh_token: str | None,
+        session_file: str | os.PathLike[str] | None,
+        min_interval: float,
+        max_retries: int,
+        timeout: float,
+        user_agent: str | None,
+    ) -> Config:
+        from ._auth import load_tokens
+
+        path = Path(session_file).expanduser() if session_file is not None else None
+        tokens = Tokens(access=access_token or "", refresh=refresh_token or "")
+        if not (tokens.access or tokens.refresh):
+            env_refresh = os.environ.get("BELI_REFRESH_TOKEN", "")
+            stored = load_tokens(path) if path else None
+            if env_refresh:
+                tokens = Tokens(refresh=env_refresh)
+            elif stored:
+                tokens = stored
+        return cls(
+            email=email or os.environ.get("BELI_EMAIL") or None,
+            phone=phone or os.environ.get("BELI_PHONE") or None,
+            password=password or os.environ.get("BELI_PASSWORD") or None,
+            tokens=tokens,
+            session_file=path,
+            min_interval=min_interval,
+            max_retries=max_retries,
+            timeout=timeout,
+            user_agent=user_agent or DEFAULT_USER_AGENT,
+        )
+
+    def headers(self) -> dict[str, str]:
+        return {
+            "Origin": ORIGIN,
+            "User-Agent": self.user_agent,
+            "Accept": "application/json",
+        }
+
+    def login_body(self) -> dict[str, str]:
+        if not self.password or not (self.email or self.phone):
+            raise AuthenticationError(
+                "No usable session. Pass email (or phone) and password, a refresh_token, "
+                "or run `beli login`."
+            )
+        body = {"password": self.password}
+        if self.email:
+            body["email"] = self.email
+        else:
+            body["phone_no"] = self.phone or ""
+        return body
+
+    def store(self) -> None:
+        if self.session_file is not None:
+            save_tokens(self.session_file, self.tokens)
+
+
+def retry_delay(response: httpx.Response | None, attempt: int) -> float:
+    if response is not None and (header := response.headers.get("Retry-After")):
+        try:
+            return min(float(header), 120.0)
+        except ValueError:
+            try:
+                return max(0.0, float(parsedate_to_datetime(header).timestamp()) - time.time())
+            except (TypeError, ValueError):
+                pass
+    return min(2.0 * 2.0**attempt, 60.0)
+
+
+def decode(response: httpx.Response) -> Any:
+    """Parse a body. Some endpoints answer 200 with an empty body."""
+    if not response.content:
+        return None
+    try:
+        return response.json()
+    except ValueError:
+        return response.text
+
+
+def _auth_failure(response: httpx.Response, what: str) -> AuthenticationError:
+    detail = decode(response)
+    if isinstance(detail, dict):
+        detail = detail.get("detail", detail)
+    return AuthenticationError(f"{what} failed (HTTP {response.status_code}): {detail}")
+
+
+class Session:
+    """Auth state and request logic for one client, as flows."""
+
+    def __init__(self, config: Config) -> None:
+        self.config = config
+
+    # Flows the transports expose
+
+    def login(self) -> Flow[Tokens]:
+        """Log in with the password now, replacing any tokens held."""
+        tokens: Tokens = yield Exclusive(self._login())
+        return tokens
+
+    def access_token(self, *, force: bool = False) -> Flow[str]:
+        """A usable access token, refreshing or logging in if needed."""
+        token: str = yield Exclusive(self._fresh_token(force))
+        return token
+
+    def user_id(self) -> Flow[str]:
+        yield from self.access_token()
+        return self.config.tokens.user_id
+
+    def send(self, request: Request[T]) -> Flow[T]:
+        """Send one request with auth, pacing and retries, and parse the answer."""
+        if request.method != "GET":
+            raise ValueError(f"beli is read-only; refusing {request.method} {request.path}")
+        if request.needs_user:
+            request = request.resolve((yield from self.user_id()))
+        reauthed = False
+        attempt = 0
+        while True:
+            token = yield from self.access_token()
+            reply = yield Call(
+                "GET",
+                request.host + request.path,
+                params=request.params,
+                headers={**self.config.headers(), "Authorization": f"Bearer {token}"},
+            )
+            if isinstance(reply, httpx.TransportError):
+                if attempt >= self.config.max_retries:
+                    raise reply
+                yield Sleep(retry_delay(None, attempt))
+                attempt += 1
+                continue
+            response: httpx.Response = reply
+            if response.status_code == 401 and not reauthed:
+                reauthed = True
+                yield from self.access_token(force=True)
+                continue
+            if response.status_code in RETRY_STATUSES and attempt < self.config.max_retries:
+                yield Sleep(retry_delay(response, attempt))
+                attempt += 1
+                continue
+            if response.status_code >= 400:
+                raise error_for(response)
+            return request.parse(decode(response))
+
+    def run(self, plan: Plan[T]) -> Flow[T]:
+        """Send each request a plan yields and hand it the parsed result."""
+        result: Any = None
+        error: APIError | None = None
+        while True:
+            try:
+                request = plan.throw(error) if error is not None else plan.send(result)
+            except StopIteration as stop:
+                value: T = stop.value
+                return value
+            result, error = None, None
+            try:
+                result = yield from self.send(request)
+            except APIError as exc:
+                error = exc
+
+    # Run under the auth lock
+
+    def _auth_post(self, path: str, body: dict[str, str]) -> Flow[httpx.Response]:
+        reply = yield Call("POST", HOST_ONBOARD + path, json=body, headers=self.config.headers())
+        if isinstance(reply, httpx.TransportError):
+            raise reply
+        response: httpx.Response = reply
+        return response
+
+    def _login(self) -> Flow[Tokens]:
+        response = yield from self._auth_post("/api/token/", self.config.login_body())
+        if response.status_code != 200:
+            raise _auth_failure(response, "Login")
+        data = response.json()
+        self.config.tokens = Tokens(access=data["access"], refresh=data["refresh"])
+        self.config.store()
+        return self.config.tokens
+
+    def _fresh_token(self, force: bool) -> Flow[str]:
+        tokens = self.config.tokens
+        if not force and not is_expired(tokens.access):
+            return tokens.access
+        if not is_expired(tokens.refresh, skew=0):
+            response = yield from self._auth_post(
+                "/api/token/refresh/", {"refresh": tokens.refresh}
+            )
+            if response.status_code == 200:
+                data = response.json()
+                tokens.access = data["access"]
+                if new_refresh := data.get("refresh"):
+                    tokens.refresh = new_refresh
+                self.config.store()
+                return tokens.access
+        return (yield from self._login()).access

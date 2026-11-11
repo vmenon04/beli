@@ -126,7 +126,7 @@ uv run pytest
 uv run ruff check . && uv run mypy
 ```
 
-The async resources are generated from the sync ones. After editing `src/beli/_resources.py`, run `python scripts/gen_async.py`. CI fails if you forget.
+Requests, parsing, auth and retries are written once and shared by both clients. Only the thin public methods exist twice (`_resources.py` and `_async_resources.py`, `_client.py` and `_async_client.py`), and `tests/test_parity.py` fails if a pair differs in anything but `await`.
 
 ## Credits
 
