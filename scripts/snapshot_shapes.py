@@ -21,10 +21,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from _drift import diff_shapes, exporter_calls, merge, shape_of
 from beli import Beli, BeliError
 from beli._auth import default_session_path
-
-from _drift import diff_shapes, exporter_calls, merge, shape_of
 
 ROOT = Path(__file__).resolve().parent.parent
 SHAPES = ROOT / "tests" / "shapes"

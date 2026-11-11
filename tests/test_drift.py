@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pytest
 import respx
-import snapshot_shapes
 
+import snapshot_shapes
+from _drift import describe, diff_shapes, exporter_calls, merge, shape_of
 from beli import Beli
 from beli._auth import Tokens, save_tokens
 from beli._constants import HOST_API
 
 from .conftest import RANKINGS_RES, USER_ID, business, make_jwt
-from _drift import describe, diff_shapes, exporter_calls, merge, shape_of
 
 
 @pytest.fixture
