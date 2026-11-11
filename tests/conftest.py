@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import time
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
 import respx
 
+from _drift import describe
 from beli._constants import HOST_API, HOST_ONBOARD, HOST_RECS
 
 USER_ID = "bd6fbeef-31f0-4836-9199-69836572e74c"
@@ -237,3 +240,22 @@ def api() -> Iterator[respx.MockRouter]:
         router.get(f"{HOST_API}/api/score-average/{USER_ID}/ALL/").respond(json=AVERAGES)
         router.get(f"{HOST_API}/api/user-field-count/{USER_ID}/RANK/").respond(json=2)
         yield router
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[None]) -> Iterator[None]:
+    """Append failed live tests to ``$BELI_LIVE_REPORT`` without quoting any response.
+
+    CI runs the live tests with tracebacks off, because a traceback can show
+    response data. This records what is safe to publish instead: the test, and
+    either the HTTP status and path or the fields that failed validation.
+    """
+    outcome = yield
+    target = os.environ.get("BELI_LIVE_REPORT")
+    report = outcome.get_result()  # type: ignore[attr-defined]
+    if not (target and report.failed and call.excinfo and item.get_closest_marker("live")):
+        return
+    path = Path(target)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as fh:
+        fh.write(f"- `{item.nodeid}` ({report.when}): {describe(call.excinfo.value)}\n")

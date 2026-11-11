@@ -4,6 +4,9 @@
     pytest -m live
 
 These only read. They exist to catch Beli changing response shapes.
+
+The session comes from ``BELI_LIVE_SESSION``, else the usual session file.
+``BELI_LIVE_INTERVAL`` sets the seconds between requests (default 2).
 """
 
 from __future__ import annotations
@@ -23,7 +26,8 @@ def beli() -> Beli:
     import os
 
     session = os.environ.get("BELI_LIVE_SESSION") or str(default_session_path())
-    return Beli.from_session(session, min_interval=2.0)
+    interval = float(os.environ.get("BELI_LIVE_INTERVAL", "2"))
+    return Beli.from_session(session, min_interval=interval)
 
 
 def test_me(beli: Beli) -> None:

@@ -106,7 +106,8 @@ def describe(exc: BaseException, me: str = "") -> str:
     """Say what went wrong without quoting any of the response."""
     if isinstance(exc, APIError):
         request = exc.response.request
-        path = request.url.path.replace(me, "{user}") if me else request.url.path
+        # Mask the account's id, and any other id in the path, before it is printed.
+        path = _UUID.sub("{user}", request.url.path.replace(me or "\0", "{user}"))
         return f"HTTP {exc.status_code} from {request.method} {path}"
     if isinstance(exc, ValidationError):
         errors = exc.errors(include_input=False, include_url=False, include_context=False)

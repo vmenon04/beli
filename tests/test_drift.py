@@ -169,3 +169,7 @@ def test_describe_never_quotes_the_response(api: respx.MockRouter) -> None:
         Beli("me@example.com", "pw", min_interval=0).photos.list()
     assert describe(info.value, USER_ID) == "HTTP 400 from GET /api/user-business-photos/"
     assert describe(RuntimeError("secret detail")) == "RuntimeError"
+    api.get(f"{HOST_API}/api/user-field-count/{USER_ID}/RANK/").respond(404)
+    with pytest.raises(Exception) as info:
+        Beli("me@example.com", "pw", min_interval=0).rankings.count()
+    assert describe(info.value) == "HTTP 404 from GET /api/user-field-count/{user}/RANK/"
