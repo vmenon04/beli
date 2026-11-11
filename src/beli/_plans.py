@@ -16,12 +16,14 @@ from .export import Export
 from .models import Bookmark, Ranking
 
 
-def all_rankings(me: str, categories: list[str] | None, user: str | None) -> Plan[list[Ranking]]:
+def all_rankings(
+    me: str, categories: list[str] | None, user: str | None, sort: ep.RankingSort | None
+) -> Plan[list[Ranking]]:
     if categories is None:
         categories = [c.code for c in (yield ep.categories(me))] or ["RES"]
     out: list[Ranking] = []
     for code in categories:
-        out.extend((yield ep.rankings(user or me, code)))
+        out.extend((yield ep.rankings(user or me, code, sort)))
     return out
 
 

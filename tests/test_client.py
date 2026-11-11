@@ -19,7 +19,7 @@ from beli import (
 )
 from beli._constants import HOST_API, HOST_ONBOARD
 
-from .conftest import USER_ID, make_jwt
+from .conftest import USER_ID, business, make_jwt
 
 
 def client(**kw: object) -> Beli:
@@ -72,14 +72,30 @@ def test_endpoint_builders_are_pure() -> None:
     assert (raw.path, raw.params) == ("/api/x/someone/", {"user": "someone", "q": "{me} too"})
 
 
-def test_rankings_sorted_best_first_with_dates(api: respx.MockRouter) -> None:
+def test_rankings_keep_api_order_by_default(api: respx.MockRouter) -> None:
     with client() as beli:
         rankings = beli.rankings.list()
-    assert [r.business.name for r in rankings] == ["Pizzeria Toro", "Mateo"]
-    mateo = rankings[1]
+    assert [r.business.name for r in rankings] == ["Mateo", "Pizzeria Toro"]
+    mateo = rankings[0]
     assert mateo.visit_dates[0].isoformat() == "2025-04-30"
     assert mateo.business.price_symbol == "$$"
     assert mateo.business.model_extra == {"businessdistinction_set": []}
+
+
+def test_rankings_sort_by_score_is_opt_in_and_stable(api: respx.MockRouter) -> None:
+    def row(id: int, score: float | None) -> dict[str, object]:
+        return {"id": id, "business": business(id, f"P{id}"), "category": "RES", "score": score}
+
+    rows = [row(1, 7.0), row(2, 9.5), row(3, None), row(4, 9.5), row(5, 7.0)]
+    api.get(f"{HOST_API}/api/get-ranking/", params={"category": "RES"}).respond(
+        json={"results": rows}
+    )
+    with client() as beli:
+        assert [r.id for r in beli.rankings.list()] == [1, 2, 3, 4, 5]
+        assert [r.id for r in beli.rankings.list(sort="score")] == [2, 4, 1, 5, 3]
+        assert [r.id for r in beli.rankings.all(["RES"], sort="score")] == [2, 4, 1, 5, 3]
+        with pytest.raises(ValueError, match="Unknown sort"):
+            beli.rankings.list(sort="name")  # type: ignore[arg-type]
 
 
 def test_all_rankings_uses_account_categories(api: respx.MockRouter) -> None:

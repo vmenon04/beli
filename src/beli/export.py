@@ -48,6 +48,8 @@ class Export:
 
         rows = []
         for category, items in by_category.items():
+            # Stable: places with equal scores keep the order the API gave them.
+            # See the TODO on _endpoints.rankings.
             items = sorted(
                 items, key=lambda r: r.score if r.score is not None else -1, reverse=True
             )

@@ -11,7 +11,7 @@ Paths and parameters come from beli-api-spec (Beli app 10.2.0). Endpoints marked
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar, get_args
 
 from pydantic import BaseModel, TypeAdapter
 
@@ -33,6 +33,9 @@ from .models import (
 )
 
 M = TypeVar("M", bound=BaseModel)
+
+RankingSort = Literal["score"]
+"""Client-side orderings ``rankings`` can apply. The default is none: the API's order."""
 
 
 def results(data: Any) -> list[Any]:
@@ -116,10 +119,37 @@ def streak(user_id: str) -> Request[int]:
 # Rankings, scores, notes
 
 
-def rankings(user_id: str, category: str) -> Request[list[Ranking]]:
+def by_score(items: list[Ranking]) -> list[Ranking]:
+    """Highest score first, unscored last. Stable, so ties keep the order they came in."""
+    return sorted(items, key=lambda r: r.score if r.score is not None else -1, reverse=True)
+
+
+def rankings(
+    user_id: str, category: str, sort: RankingSort | None = None
+) -> Request[list[Ranking]]:
+    """A user's rankings in one category, in the order the API returns them.
+
+    TODO(live): the order of /api/get-ranking/ has not been checked against a
+    real account. ``tests/test_live.py::test_ranking_order`` must confirm:
+
+    1. whether the rows already come back best first, i.e. in the user's own
+       rank order, or in some other order (creation time, id);
+    2. how places with the same score are ordered. Beli can show several
+       places at one score, and the user's order among them is only
+       recoverable if the API's order is the rank order.
+
+    Until that is known, nothing here reorders the response unless asked to
+    with ``sort="score"``, and that sort is stable so it cannot lose whatever
+    the API's order means for ties. ``Export.rated_places`` numbers ranks with
+    the same stable sort. If (1) turns out true, the sort is redundant and
+    ``rank`` can simply be the row's position.
+    """
+    if sort is not None and sort not in get_args(RankingSort):
+        raise ValueError(f"Unknown sort {sort!r}; use one of {get_args(RankingSort)} or None")
+
     def parse(data: Any) -> list[Ranking]:
         items = list_of(Ranking)(data)
-        return sorted(items, key=lambda r: r.score if r.score is not None else -1, reverse=True)
+        return by_score(items) if sort == "score" else items
 
     return Request(
         "GET",

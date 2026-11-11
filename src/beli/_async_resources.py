@@ -43,16 +43,31 @@ class AsyncRankings(AsyncResource):
     """Places you've ranked and the 0 to 10 scores Beli gave them."""
 
     async def list(
-        self, category: str = "RES", *, user: str | None = None
+        self,
+        category: str = "RES",
+        *,
+        user: str | None = None,
+        sort: ep.RankingSort | None = None,
     ) -> builtins.list[Ranking]:
-        """Rankings in one category, best first."""
-        return await self._t.send(ep.rankings(await self._uid(user), category))
+        """Rankings in one category, in the order the API returns them.
+
+        ``sort="score"`` puts the highest score first instead. Places with the
+        same score keep the API's order.
+        """
+        return await self._t.send(ep.rankings(await self._uid(user), category, sort))
 
     async def all(
-        self, categories: builtins.list[str] | None = None, *, user: str | None = None
+        self,
+        categories: builtins.list[str] | None = None,
+        *,
+        user: str | None = None,
+        sort: ep.RankingSort | None = None,
     ) -> builtins.list[Ranking]:
-        """Rankings across every category on the account (or the ones given)."""
-        return await self._t.run(plans.all_rankings(await self._uid(None), categories, user))
+        """Rankings across every category on the account (or the ones given).
+
+        Categories come one after another. ``sort`` applies within each.
+        """
+        return await self._t.run(plans.all_rankings(await self._uid(None), categories, user, sort))
 
     async def visit_dates(self, business_id: int) -> builtins.list[str]:
         """ISO dates you logged visits to a place, newest first."""
