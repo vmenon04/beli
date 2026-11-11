@@ -52,6 +52,26 @@ def test_user_id_is_filled_into_path_and_params(api: respx.MockRouter) -> None:
     assert beli.user_id == USER_ID
 
 
+def test_explicit_user_is_used_instead_of_own_id(api: respx.MockRouter) -> None:
+    other = "11111111-2222-4333-8444-555555555555"
+    route = api.get(f"{HOST_API}/api/user-field-count/{other}/RANK/").respond(json=5)
+    with client() as beli:
+        assert beli.rankings.count(user=other) == 5
+        beli.rankings.list("RES", user=other)
+    assert route.called
+    assert api.calls[-1].request.url.params["user"] == other
+
+
+def test_endpoint_builders_are_pure() -> None:
+    from beli import _endpoints as ep
+
+    request = ep.rankings("someone", "BAR")
+    assert request.params == {"user": "someone", "category": "BAR"}
+    assert ep.score_averages("someone").path == "/api/score-average/someone/ALL/"
+    raw = ep.raw_get("someone", "api/x/{me}", {"user": "{me}", "q": "{me} too"}, None)
+    assert (raw.path, raw.params) == ("/api/x/someone/", {"user": "someone", "q": "{me} too"})
+
+
 def test_rankings_sorted_best_first_with_dates(api: respx.MockRouter) -> None:
     with client() as beli:
         rankings = beli.rankings.list()

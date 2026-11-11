@@ -21,7 +21,7 @@ from __future__ import annotations
 import os
 import time
 from collections.abc import Callable, Generator, Mapping
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any, Generic, TypeVar
@@ -33,9 +33,6 @@ from ._constants import DEFAULT_USER_AGENT, HOST_API, HOST_ONBOARD, ORIGIN
 from .errors import APIError, AuthenticationError, error_for
 
 T = TypeVar("T")
-
-ME = "__BELI_ME__"
-"""Stand-in for the logged-in user's id. Resolved after authentication."""
 
 RETRY_STATUSES = frozenset({429, 502, 503, 504})
 
@@ -56,29 +53,6 @@ class Request(Generic[T]):
     params: Mapping[str, Any] | None = None
     host: str = HOST_API
     parse: Callable[[Any], T] = field(default=_identity)
-
-    def resolve(self, user_id: str | None) -> Request[T]:
-        if user_id is None:
-            return self
-
-        def sub(value: Any) -> Any:
-            if isinstance(value, str):
-                return value.replace(ME, user_id)
-            if isinstance(value, Mapping):
-                return {k: sub(v) for k, v in value.items()}
-            if isinstance(value, list):
-                return [sub(v) for v in value]
-            return value
-
-        return replace(
-            self,
-            path=sub(self.path),
-            params=sub(self.params) if self.params is not None else None,
-        )
-
-    @property
-    def needs_user(self) -> bool:
-        return ME in repr((self.path, self.params))
 
 
 @dataclass(frozen=True)
@@ -240,6 +214,7 @@ class Session:
 
     def __init__(self, config: Config) -> None:
         self.config = config
+        self._user_id: str | None = None
 
     # Flows the transports expose
 
@@ -254,15 +229,16 @@ class Session:
         return token
 
     def user_id(self) -> Flow[str]:
-        yield from self.access_token()
-        return self.config.tokens.user_id
+        """The logged-in user's id. Authenticates if needed, then is read once and kept."""
+        if self._user_id is None:
+            yield from self.access_token()
+            self._user_id = self.config.tokens.user_id
+        return self._user_id
 
     def send(self, request: Request[T]) -> Flow[T]:
         """Send one request with auth, pacing and retries, and parse the answer."""
         if request.method != "GET":
             raise ValueError(f"beli is read-only; refusing {request.method} {request.path}")
-        if request.needs_user:
-            request = request.resolve((yield from self.user_id()))
         reauthed = False
         attempt = 0
         while True:
@@ -323,6 +299,7 @@ class Session:
             raise _auth_failure(response, "Login")
         data = response.json()
         self.config.tokens = Tokens(access=data["access"], refresh=data["refresh"])
+        self._user_id = self.config.tokens.user_id
         self.config.store()
         return self.config.tokens
 

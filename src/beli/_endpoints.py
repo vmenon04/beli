@@ -1,6 +1,8 @@
 """One builder per endpoint. All are reads: this package never changes an account.
 
- Each returns a :class:`Request` that either client can send.
+Each returns a :class:`Request` that either client can send. Builders are
+pure: one that needs a user takes the id as its first argument, and the
+client passes the logged-in user's id when the caller didn't name one.
 
 Paths and parameters come from beli-api-spec (Beli app 10.2.0). Endpoints marked
 "verified" there answered on a live account; the rest are from app code only.
@@ -14,7 +16,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel, TypeAdapter
 
 from ._constants import GUIDE_FLAGS, HOST_ONBOARD, NOTES_FIELD
-from ._session import ME, Request
+from ._session import Request
 from .models import (
     Bookmark,
     BusinessHours,
@@ -67,10 +69,6 @@ def as_int(data: Any) -> int:
     return int(data or 0)
 
 
-def user_param(user: str | None) -> str:
-    return user or ME
-
-
 # Account
 
 
@@ -82,37 +80,35 @@ def member(user_id: str) -> Request[User]:
     return Request("GET", "/api/user/member/", params={"id": user_id}, parse=one(User))
 
 
-def categories() -> Request[list[Category]]:
+def categories(user_id: str) -> Request[list[Category]]:
     def parse(data: Any) -> list[Category]:
         raw = data.get("categories", []) if isinstance(data, dict) else []
         return [Category.model_validate(c) for c in raw]
 
-    return Request("GET", "/api/user-setting/", params={"user": ME}, parse=parse)
+    return Request("GET", "/api/user-setting/", params={"user": user_id}, parse=parse)
 
 
-def rank_count(user: str | None) -> Request[int]:
-    return Request("GET", f"/api/user-field-count/{user_param(user)}/RANK/", parse=as_int)
+def rank_count(user_id: str) -> Request[int]:
+    return Request("GET", f"/api/user-field-count/{user_id}/RANK/", parse=as_int)
 
 
-def ranked_this_year(user: str | None, year: int | None) -> Request[int]:
+def ranked_this_year(user_id: str, year: int | None) -> Request[int]:
     params = {"year": year} if year else None
-    return Request(
-        "GET", f"/api/count-ranked-this-year/{user_param(user)}/", params=params, parse=as_int
-    )
+    return Request("GET", f"/api/count-ranked-this-year/{user_id}/", params=params, parse=as_int)
 
 
-def app_rank(user: str | None) -> Request[Any]:
-    return Request("GET", f"/api/app-rank/{user_param(user)}/")
+def app_rank(user_id: str) -> Request[Any]:
+    return Request("GET", f"/api/app-rank/{user_id}/")
 
 
-def streak(user: str | None) -> Request[int]:
+def streak(user_id: str) -> Request[int]:
     def parse(data: Any) -> int:
         return int(data.get("result", 0)) if isinstance(data, dict) else int(data or 0)
 
     return Request(
         "GET",
         "/api/user/streak/",
-        params={"user": user_param(user), "has_new_streak_share_page": "true"},
+        params={"user": user_id, "has_new_streak_share_page": "true"},
         parse=parse,
     )
 
@@ -120,7 +116,7 @@ def streak(user: str | None) -> Request[int]:
 # Rankings, scores, notes
 
 
-def rankings(category: str, user: str | None) -> Request[list[Ranking]]:
+def rankings(user_id: str, category: str) -> Request[list[Ranking]]:
     def parse(data: Any) -> list[Ranking]:
         items = list_of(Ranking)(data)
         return sorted(items, key=lambda r: r.score if r.score is not None else -1, reverse=True)
@@ -128,24 +124,24 @@ def rankings(category: str, user: str | None) -> Request[list[Ranking]]:
     return Request(
         "GET",
         "/api/get-ranking/",
-        params={"user": user_param(user), "category": category},
+        params={"user": user_id, "category": category},
         parse=parse,
     )
 
 
-def scores(user: str | None) -> Request[list[Score]]:
-    return Request("GET", f"/api/user-scores/{user_param(user)}/", parse=list_of(Score))
+def scores(user_id: str) -> Request[list[Score]]:
+    return Request("GET", f"/api/user-scores/{user_id}/", parse=list_of(Score))
 
 
-def score_averages(user: str | None) -> Request[ScoreAverages]:
+def score_averages(user_id: str) -> Request[ScoreAverages]:
     return Request(
         "GET",
-        f"/api/score-average/{user_param(user)}/ALL/",
+        f"/api/score-average/{user_id}/ALL/",
         parse=ScoreAverages.model_validate,
     )
 
 
-def visit_dates(business_id: int) -> Request[list[str]]:
+def visit_dates(user_id: str, business_id: int) -> Request[list[str]]:
     def parse(data: Any) -> list[str]:
         out = []
         for item in results(data):
@@ -157,14 +153,14 @@ def visit_dates(business_id: int) -> Request[list[str]]:
 
     return Request(
         "GET",
-        f"/api/visit-dates-on-business/{ME}/{business_id}/",
+        f"/api/visit-dates-on-business/{user_id}/{business_id}/",
         params={"reversed": "true"},
         parse=parse,
     )
 
 
-def notes(user: str | None, business_id: int | None) -> Request[list[Note]]:
-    params: dict[str, Any] = {"field__name": NOTES_FIELD, "user": user_param(user)}
+def notes(user_id: str, business_id: int | None) -> Request[list[Note]]:
+    params: dict[str, Any] = {"field__name": NOTES_FIELD, "user": user_id}
     if business_id is not None:
         params["business"] = business_id
 
@@ -175,9 +171,9 @@ def notes(user: str | None, business_id: int | None) -> Request[list[Note]]:
     return Request("GET", "/api/datauserbusinesstext-sparse/", params=params, parse=parse)
 
 
-def note_text(user: str | None, business_id: int) -> Request[str | None]:
+def note_text(user_id: str, business_id: int) -> Request[str | None]:
     """The current note on one place, or ``None``."""
-    request = notes(user, business_id)
+    request = notes(user_id, business_id)
 
     def parse(data: Any) -> str | None:
         matching = [n for n in request.parse(data) if n.business == business_id]
@@ -186,16 +182,16 @@ def note_text(user: str | None, business_id: int) -> Request[str | None]:
     return Request("GET", request.path, params=request.params, parse=parse)
 
 
-def photos(user: str | None) -> Request[list[Photo]]:
+def photos(user_id: str) -> Request[list[Photo]]:
     return Request(
-        "GET", "/api/user-business-photos/", params={"user": user_param(user)}, parse=list_of(Photo)
+        "GET", "/api/user-business-photos/", params={"user": user_id}, parse=list_of(Photo)
     )
 
 
 # Bookmarks
 
 
-def bookmarks(category: str, user: str | None) -> Request[list[Bookmark]]:
+def bookmarks(user_id: str, category: str) -> Request[list[Bookmark]]:
     def parse(data: Any) -> list[Bookmark]:
         # Keyed by display name, e.g. {"Restaurants": [...]}
         if isinstance(data, dict) and "results" not in data:
@@ -207,7 +203,7 @@ def bookmarks(category: str, user: str | None) -> Request[list[Bookmark]]:
     return Request(
         "GET",
         "/api/get-bookmark/",
-        params={"user": user_param(user), "category": category},
+        params={"user": user_id, "category": category},
         parse=parse,
     )
 
@@ -215,31 +211,31 @@ def bookmarks(category: str, user: str | None) -> Request[list[Bookmark]]:
 # Guides
 
 
-def guides(user: str | None) -> Request[list[Guide]]:
+def guides(user_id: str) -> Request[list[Guide]]:
     return Request(
         "GET",
         "/api/user-guide/",
-        params={"user_id": user_param(user), **GUIDE_FLAGS},
+        params={"user_id": user_id, **GUIDE_FLAGS},
         parse=list_of(Guide),
     )
 
 
-def guide_items(user: str | None) -> Request[list[GuideItem]]:
+def guide_items(user_id: str) -> Request[list[GuideItem]]:
     return Request(
         "GET",
         "/api/user-guide-items/",
-        params={"user_id": user_param(user), **GUIDE_FLAGS},
+        params={"user_id": user_id, **GUIDE_FLAGS},
         parse=list_of(GuideItem),
     )
 
 
-def guide(guide_id: int) -> Request[Any]:
+def guide(user_id: str, guide_id: int) -> Request[Any]:
     return Request(
         "GET",
         "/api/user-guide-list-view/",
         params={
             "list_id": guide_id,
-            "viewer": ME,
+            "viewer": user_id,
             "check_user_access": "false",
             "playlists_v2": "true",
             "vguides": "true",
@@ -251,19 +247,19 @@ def guide(guide_id: int) -> Request[Any]:
 # Social
 
 
-def followers(user: str | None) -> Request[list[User]]:
+def followers(user_id: str) -> Request[list[User]]:
     return Request(
         "GET",
-        f"/api/followers/{user_param(user)}/",
+        f"/api/followers/{user_id}/",
         params={"include_followed": "true"},
         parse=list_of(User),
     )
 
 
-def following(user: str | None) -> Request[list[User]]:
+def following(user_id: str) -> Request[list[User]]:
     return Request(
         "GET",
-        f"/api/following/{user_param(user)}/",
+        f"/api/following/{user_id}/",
         params={"include_followed": "true"},
         parse=list_of(User),
     )
@@ -273,9 +269,9 @@ def following(user: str | None) -> Request[list[User]]:
 
 
 def search(
-    term: str, city: str | None, coords: tuple[float, float] | None
+    user_id: str, term: str, city: str | None, coords: tuple[float, float] | None
 ) -> Request[list[SearchResult]]:
-    params: dict[str, Any] = {"term": term, "user": ME}
+    params: dict[str, Any] = {"term": term, "user": user_id}
     if city:
         params["city"] = city
     if coords:
@@ -292,22 +288,25 @@ def business_hours(business_id: int) -> Request[list[BusinessHours]]:
     )
 
 
-def trending(category: str) -> Request[list[Any]]:
+def trending(user_id: str, category: str) -> Request[list[Any]]:
     from .models import Business
 
     return Request(
-        "GET", f"/api/trending/{ME}/", params={"category": category}, parse=list_of(Business)
+        "GET", f"/api/trending/{user_id}/", params={"category": category}, parse=list_of(Business)
     )
 
 
-def raw_get(path: str, params: dict[str, Any] | None, host: str | None) -> Request[Any]:
+def raw_get(
+    user_id: str, path: str, params: dict[str, Any] | None, host: str | None
+) -> Request[Any]:
+    """Any GET. ``{me}`` in the path or as a whole param value becomes ``user_id``."""
     if not path.startswith("/"):
         path = "/" + path
     if not path.endswith("/"):
         path += "/"  # Django APPEND_SLASH: routes need the trailing slash
-    path = path.replace("{me}", ME)
+    path = path.replace("{me}", user_id)
     if params:
-        params = {k: ME if v == "{me}" else v for k, v in params.items()}
+        params = {k: user_id if v == "{me}" else v for k, v in params.items()}
     if host:
         return Request("GET", path, params=params, host=host)
     return Request("GET", path, params=params)

@@ -96,7 +96,7 @@ class Beli:
 
     def categories(self) -> list[Category]:
         """Category codes enabled on the account (``RES``, ``BAR``, ...)."""
-        return self._transport.send(ep.categories())
+        return self._transport.send(ep.categories(self._transport.user_id()))
 
     def get(
         self, path: str, *, params: dict[str, Any] | None = None, host: str | None = None
@@ -105,7 +105,7 @@ class Beli:
 
         beli.get("/api/user-field-count/{me}/RANK/")
         """
-        return self._transport.send(ep.raw_get(path, params, host))
+        return self._transport.send(ep.raw_get(self._transport.user_id(), path, params, host))
 
     def export(
         self,
@@ -114,7 +114,7 @@ class Beli:
         on_progress: Callable[[str], None] | None = None,
     ) -> Export:
         """Fetch rankings, notes, photos, bookmarks and guides in one go."""
-        return self._transport.run(plans.export(categories, on_progress))
+        return self._transport.run(plans.export(self._transport.user_id(), categories, on_progress))
 
     def close(self) -> None:
         self._transport.close()

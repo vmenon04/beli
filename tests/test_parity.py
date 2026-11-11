@@ -106,7 +106,7 @@ def test_normalizer_notices_drift(tmp_path: Path) -> None:
     source = (SRC / "_async_resources.py").read_text()
     for old, new in [
         ('category: str = "RES"', 'category: str = "BAR"'),
-        ("ep.photos(user)", "ep.photos(None)"),
+        ("ep.photos(await self._uid(user))", "ep.photos(user)"),
         ("Your Want to Try list.", "Bookmarks."),
     ]:
         assert old in source

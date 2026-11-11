@@ -104,7 +104,7 @@ class AsyncBeli:
 
     async def categories(self) -> list[Category]:
         """Category codes enabled on the account (``RES``, ``BAR``, ...)."""
-        return await self._transport.send(ep.categories())
+        return await self._transport.send(ep.categories(await self._transport.user_id()))
 
     async def get(
         self, path: str, *, params: dict[str, Any] | None = None, host: str | None = None
@@ -113,7 +113,9 @@ class AsyncBeli:
 
         beli.get("/api/user-field-count/{me}/RANK/")
         """
-        return await self._transport.send(ep.raw_get(path, params, host))
+        return await self._transport.send(
+            ep.raw_get(await self._transport.user_id(), path, params, host)
+        )
 
     async def export(
         self,
@@ -122,7 +124,9 @@ class AsyncBeli:
         on_progress: Callable[[str], None] | None = None,
     ) -> Export:
         """Fetch rankings, notes, photos, bookmarks and guides in one go."""
-        return await self._transport.run(plans.export(categories, on_progress))
+        return await self._transport.run(
+            plans.export(await self._transport.user_id(), categories, on_progress)
+        )
 
     async def close(self) -> None:
         await self._transport.close()
