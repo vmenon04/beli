@@ -11,6 +11,20 @@ HOST_ONBOARD = "https://backoffice-service-onboarding-t57o3dxfca-nn.a.run.app"
 HOST_RECS = "https://backoffice-service-recs-t57o3dxfca-nn.a.run.app"
 """Recommendation service."""
 
+FALLBACK_HOSTS: dict[str, str] = {"api": HOST_API, "onboard": HOST_ONBOARD, "recs": HOST_RECS}
+"""Service name to base URL, used until (and unless) discovery says otherwise."""
+
+HOSTS_PATH = "/api/api-hosts/"
+"""Where the app asks which hosts to use. Answered by the main API host."""
+
+DISCOVERED_HOSTS: dict[str, str] = {"apiHost": "api", "recsHost": "recs"}
+"""Field in the ``HOSTS_PATH`` response to the service it names.
+
+The response has no field for the onboarding host, so that one is always the
+hard-coded value. Its other fields (``priorityHost``, ``profileHost``,
+``photoHost``, ...) are for services this package does not call.
+"""
+
 ORIGIN = "capacitor://localhost"
 """The app is a Capacitor webview. The API answers 403 without an Origin header."""
 

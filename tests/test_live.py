@@ -4,9 +4,14 @@
     pytest -m live
 
 These only read. They exist to catch Beli changing response shapes.
+
+The session comes from ``BELI_LIVE_SESSION``, else the usual session file.
+``BELI_LIVE_INTERVAL`` sets the seconds between requests (default 2).
 """
 
 from __future__ import annotations
+
+import itertools
 
 import pytest
 
@@ -21,7 +26,8 @@ def beli() -> Beli:
     import os
 
     session = os.environ.get("BELI_LIVE_SESSION") or str(default_session_path())
-    return Beli.from_session(session, min_interval=2.0)
+    interval = float(os.environ.get("BELI_LIVE_INTERVAL", "2"))
+    return Beli.from_session(session, min_interval=interval)
 
 
 def test_me(beli: Beli) -> None:
@@ -33,6 +39,22 @@ def test_rankings_parse(beli: Beli) -> None:
     if rankings:
         assert rankings[0].business.name
         assert rankings[0].score is not None
+
+
+def test_ranking_order(beli: Beli) -> None:
+    """Answers the TODO on ``beli._endpoints.rankings``. Reports counts only, never values."""
+    scores = [r.score for r in beli.rankings.list() if r.score is not None]
+    ties = len(scores) - len(set(scores))
+    if len(scores) < 3:
+        pytest.skip(f"only {len(scores)} scored rankings; need 3 or more to say anything")
+    out_of_order = sum(1 for a, b in itertools.pairwise(scores) if a < b)
+    assert out_of_order == 0, (
+        f"/api/get-ranking/ is NOT best-first: {out_of_order} of {len(scores) - 1} adjacent "
+        f"pairs ascend ({ties} tied scores). The API order is not the rank order, so "
+        'sort="score" is needed for a ranked list. Record that on the TODO and drop this assert.'
+    )
+    if ties == 0:
+        pytest.skip("best-first confirmed, but this account has no tied scores to check tie order")
 
 
 def test_categories_and_notes(beli: Beli) -> None:

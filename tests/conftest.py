@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import time
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
 import respx
 
-from beli._constants import HOST_API, HOST_ONBOARD
+from beli._constants import HOST_API, HOST_ONBOARD, HOST_RECS
+from snapshot_shapes import describe
 
 USER_ID = "bd6fbeef-31f0-4836-9199-69836572e74c"
 
@@ -183,9 +186,33 @@ AVERAGES = {
     "CUISINE": [{"value": "Thai", "count": 1, "score": 8.4}],
 }
 
+API_HOSTS = {
+    "apiHost": HOST_API,
+    "priorityHost": HOST_API,
+    "profileHost": HOST_API,
+    "photoHost": HOST_API,
+    "recsHost": HOST_RECS,
+    "activityHost": HOST_API,
+    "popupsHost": HOST_API,
+    "aiSearchHost": HOST_API,
+    "defaultRetriesGet": 3,
+    "defaultRetriesPost": 0,
+    "defaultRetriesPut": 0,
+}
+
 
 @pytest.fixture(autouse=True)
-def _isolate_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+def _isolate_env(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    """Keep unit tests away from real credentials, the real session file and real waiting.
+
+    Live tests are left alone: they need the saved session, and without a
+    working ``time.sleep`` they would hit the API with no pause between
+    requests and no backoff on retries.
+    """
+    if request.node.get_closest_marker("live"):
+        return
     for var in ("BELI_EMAIL", "BELI_PHONE", "BELI_PASSWORD", "BELI_REFRESH_TOKEN"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("BELI_SESSION_FILE", str(tmp_path / "session.json"))
@@ -202,6 +229,7 @@ def api() -> Iterator[respx.MockRouter]:
         router.get(f"{HOST_ONBOARD}/api/user/logged-in/").respond(
             json={"count": 1, "results": [USER]}
         )
+        router.get(f"{HOST_API}/api/api-hosts/").respond(json=API_HOSTS)
         router.get(f"{HOST_API}/api/user-setting/").respond(json=SETTINGS)
         router.get(f"{HOST_API}/api/get-ranking/", params={"category": "RES"}).respond(
             json=RANKINGS_RES
@@ -222,3 +250,22 @@ def api() -> Iterator[respx.MockRouter]:
         router.get(f"{HOST_API}/api/score-average/{USER_ID}/ALL/").respond(json=AVERAGES)
         router.get(f"{HOST_API}/api/user-field-count/{USER_ID}/RANK/").respond(json=2)
         yield router
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[None]) -> Iterator[None]:
+    """Append failed live tests to ``$BELI_LIVE_REPORT`` without quoting any response.
+
+    CI runs the live tests with tracebacks off, because a traceback can show
+    response data. This records what is safe to publish instead: the test, and
+    either the HTTP status and path or the fields that failed validation.
+    """
+    outcome = yield
+    target = os.environ.get("BELI_LIVE_REPORT")
+    report = outcome.get_result()  # type: ignore[attr-defined]
+    if not (target and report.failed and call.excinfo and item.get_closest_marker("live")):
+        return
+    path = Path(target)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as fh:
+        fh.write(f"- `{item.nodeid}` ({report.when}): {describe(call.excinfo.value)}\n")

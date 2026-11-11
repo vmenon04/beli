@@ -28,12 +28,19 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/vmenon04/beli"
 Issues = "https://github.com/vmenon04/beli/issues"
+Changelog = "https://github.com/vmenon04/beli/blob/main/CHANGELOG.md"
 
 [project.scripts]
 beli = "beli.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8", "pytest-asyncio>=0.23", "respx>=0.21", "ruff>=0.6", "mypy>=1.10"]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "respx>=0.21",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
 
 [tool.hatch.version]
 path = "src/beli/_version.py"
@@ -43,6 +50,7 @@ packages = ["src/beli"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["scripts"]
 asyncio_mode = "auto"
 addopts = "-m 'not live'"
 markers = ["live: hits the real Beli API; needs BELI_EMAIL/BELI_PASSWORD or a saved session"]
@@ -50,6 +58,7 @@ markers = ["live: hits the real Beli API; needs BELI_EMAIL/BELI_PASSWORD or a sa
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+src = ["src", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]

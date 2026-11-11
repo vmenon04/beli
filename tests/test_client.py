@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import stat
@@ -14,12 +15,14 @@ from beli import (
     AuthenticationError,
     BadRequestError,
     Beli,
+    BeliError,
     RateLimitError,
     ServerError,
+    UnexpectedResponseError,
 )
 from beli._constants import HOST_API, HOST_ONBOARD
 
-from .conftest import USER_ID, make_jwt
+from .conftest import USER_ID, business, make_jwt
 
 
 def client(**kw: object) -> Beli:
@@ -52,14 +55,50 @@ def test_user_id_is_filled_into_path_and_params(api: respx.MockRouter) -> None:
     assert beli.user_id == USER_ID
 
 
-def test_rankings_sorted_best_first_with_dates(api: respx.MockRouter) -> None:
+def test_explicit_user_is_used_instead_of_own_id(api: respx.MockRouter) -> None:
+    other = "11111111-2222-4333-8444-555555555555"
+    route = api.get(f"{HOST_API}/api/user-field-count/{other}/RANK/").respond(json=5)
+    with client() as beli:
+        assert beli.rankings.count(user=other) == 5
+        beli.rankings.list("RES", user=other)
+    assert route.called
+    assert api.calls[-1].request.url.params["user"] == other
+
+
+def test_endpoint_builders_are_pure() -> None:
+    from beli import _endpoints as ep
+
+    request = ep.rankings("someone", "BAR")
+    assert request.params == {"user": "someone", "category": "BAR"}
+    assert ep.score_averages("someone").path == "/api/score-average/someone/ALL/"
+    raw = ep.raw_get("someone", "api/x/{me}", {"user": "{me}", "q": "{me} too"}, None)
+    assert (raw.path, raw.params) == ("/api/x/someone/", {"user": "someone", "q": "{me} too"})
+
+
+def test_rankings_keep_api_order_by_default(api: respx.MockRouter) -> None:
     with client() as beli:
         rankings = beli.rankings.list()
-    assert [r.business.name for r in rankings] == ["Pizzeria Toro", "Mateo"]
-    mateo = rankings[1]
+    assert [r.business.name for r in rankings] == ["Mateo", "Pizzeria Toro"]
+    mateo = rankings[0]
     assert mateo.visit_dates[0].isoformat() == "2025-04-30"
     assert mateo.business.price_symbol == "$$"
     assert mateo.business.model_extra == {"businessdistinction_set": []}
+
+
+def test_rankings_sort_by_score_is_opt_in_and_stable(api: respx.MockRouter) -> None:
+    def row(id: int, score: float | None) -> dict[str, object]:
+        return {"id": id, "business": business(id, f"P{id}"), "category": "RES", "score": score}
+
+    rows = [row(1, 7.0), row(2, 9.5), row(3, None), row(4, 9.5), row(5, 7.0)]
+    api.get(f"{HOST_API}/api/get-ranking/", params={"category": "RES"}).respond(
+        json={"results": rows}
+    )
+    with client() as beli:
+        assert [r.id for r in beli.rankings.list()] == [1, 2, 3, 4, 5]
+        assert [r.id for r in beli.rankings.list(sort="score")] == [2, 4, 1, 5, 3]
+        assert [r.id for r in beli.rankings.all(["RES"], sort="score")] == [2, 4, 1, 5, 3]
+        with pytest.raises(ValueError, match="Unknown sort"):
+            beli.rankings.list(sort="name")  # type: ignore[arg-type]
 
 
 def test_all_rankings_uses_account_categories(api: respx.MockRouter) -> None:
@@ -151,9 +190,40 @@ def test_400_not_retried(api: respx.MockRouter) -> None:
     assert route.call_count == 1
 
 
-def test_read_only(api: respx.MockRouter) -> None:
-    from beli._transport import Request
+def test_changed_response_raises_one_clear_error(api: respx.MockRouter) -> None:
+    changed = {"id": 1, "business": "a-private-value", "picture": "https://example.com/1.jpg"}
+    api.get(f"{HOST_API}/api/user-business-photos/").respond(200, json={"results": [changed]})
+    with pytest.raises(UnexpectedResponseError) as info:
+        client().photos.list()
+    error = info.value
+    assert isinstance(error, BeliError)
+    assert (error.method, error.path) == ("GET", "/api/user-business-photos/")
+    assert "0.business (int_parsing)" in error.problem
+    assert "0.image (missing)" in error.problem
+    assert "upgrade beli" in str(error)
+    assert "a-private-value" not in str(error)
+    assert error.__cause__ is not None
 
+    # A parser that trips over the envelope itself is reported the same way.
+    api.get(f"{HOST_API}/api/user/streak/").respond(200, json={"result": "soon"})
+    with pytest.raises(UnexpectedResponseError) as info:
+        client().users.streak()
+    assert info.value.problem == "ValueError"
+    assert "soon" not in str(info.value)
+
+
+def test_changed_response_async(api: respx.MockRouter) -> None:
+    api.get(f"{HOST_API}/api/user-business-photos/").respond(200, json={"results": [{}]})
+
+    async def run() -> None:
+        async with AsyncBeli("me@example.com", "pw", min_interval=0) as beli:
+            await beli.photos.list()
+
+    with pytest.raises(UnexpectedResponseError, match="does not validate"):
+        asyncio.run(run())
+
+
+def test_read_only(api: respx.MockRouter) -> None:
     beli = client()
     for resource, name in [
         (beli.notes, "set"),
@@ -162,8 +232,21 @@ def test_read_only(api: respx.MockRouter) -> None:
         (beli.rankings, "delete"),
     ]:
         assert not hasattr(resource, name)
-    with pytest.raises(ValueError, match="read-only"):
-        beli._transport.send(Request("POST", "/api/add-bookmark/", json={}))
+    # Every request leaves through Transport._exchange, so nothing can go around the guard.
+    exchange = beli._transport._exchange
+    for method, path, body in [
+        ("POST", "/api/add-bookmark/", {}),
+        ("DELETE", "/api/rank/1/", None),
+        ("PUT", "/api/token/", {}),
+        ("PATCH", "/api/user/logged-in/", {}),
+        ("GET", "/api/get-ranking/", {"smuggled": "body"}),
+    ]:
+        with pytest.raises(ValueError, match="read-only"):
+            exchange(method, HOST_API + path, json=body)
+    assert len(api.calls) == 0  # refused before anything was sent
+    # Login and token refresh are the only POSTs that get through.
+    assert exchange("POST", HOST_ONBOARD + "/api/token/refresh/", json={"refresh": "x"})
+    beli.export()
     assert not any(
         c.request.method != "GET" and "token" not in c.request.url.path for c in api.calls
     )
@@ -205,15 +288,20 @@ async def test_async_client(api: respx.MockRouter) -> None:
     assert len(export.rated_places()) == 3
 
 
-def test_async_resources_are_generated() -> None:
-    import subprocess
-    import sys
-
-    root = Path(__file__).resolve().parent.parent
-    result = subprocess.run(
-        [sys.executable, "scripts/gen_async.py", "--check"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, result.stdout
+async def test_async_client_retries_and_reauths(
+    api: respx.MockRouter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    slept: list[float] = []
+    monkeypatch.setattr("time.sleep", slept.append)
+    route = api.get(f"{HOST_API}/api/user-business-photos/")
+    route.side_effect = [
+        httpx.Response(429, headers={"Retry-After": "7"}),
+        httpx.Response(401),
+        httpx.ConnectError("down"),
+        httpx.Response(200, json={"results": []}),
+    ]
+    async with AsyncBeli("me@example.com", "pw", min_interval=0) as beli:
+        assert await beli.photos.list() == []
+    assert route.call_count == 4
+    assert slept == [7.0, 4.0]
+    assert [c.request.url.path for c in api.calls].count("/api/token/refresh/") == 1

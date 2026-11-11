@@ -97,7 +97,7 @@ def cmd_export(args: argparse.Namespace) -> int:
 
 def cmd_rankings(args: argparse.Namespace) -> int:
     with _client(args) as beli:
-        rankings = beli.rankings.list(args.category.upper())
+        rankings = beli.rankings.list(args.category.upper(), sort="score")
     if args.limit:
         rankings = rankings[: args.limit]
     if args.json:
@@ -165,7 +165,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-c", "--categories", help="comma-separated codes, e.g. RES,BAR (default: all)")
     p.set_defaults(func=cmd_export)
 
-    p = sub.add_parser("rankings", help="print your ranked list")
+    p = sub.add_parser("rankings", help="print your ranked list, best first")
     p.add_argument("-c", "--category", default="RES")
     p.add_argument("-n", "--limit", type=int)
     p.add_argument("--json", action="store_true")
