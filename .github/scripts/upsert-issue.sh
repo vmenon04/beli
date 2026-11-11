@@ -3,11 +3,7 @@
 #
 #   upsert-issue.sh LABEL TITLE BODY_FILE
 #
-# Needs GH_TOKEN with issues: write, and actions: write to start the repair.
-#
-# A new issue starts repair.yml. An issue that is already open does not: the
-# check runs again every day, and one proposed fix per issue is enough. To ask
-# for another, run the Repair workflow by hand with the issue number.
+# Needs GH_TOKEN with issues: write.
 set -euo pipefail
 
 label=$1
@@ -31,8 +27,4 @@ else
   url=$(gh issue create --title "$title" --label "$label" --body-file "$body_file")
   number=${url##*/}
   echo "Opened issue #$number"
-  # Issues and labels created with GITHUB_TOKEN do not trigger workflows, so
-  # the repair has to be started explicitly.
-  gh workflow run repair.yml -f issue="$number" \
-    || echo "::warning::could not start repair.yml for #$number; run it by hand"
 fi

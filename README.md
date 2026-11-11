@@ -146,7 +146,6 @@ A private API changes without warning, so the repository watches for it:
 
 - The unit tests run against mocked responses and never touch the network.
 - A daily workflow logs in with a throwaway account, runs the live tests, and compares the shape of every response the exporter reads (field names and JSON types, no values) with the shapes stored in `tests/shapes/`. A difference opens an `api-drift` issue with the diff.
-- The issue starts a workflow that proposes a fix as a pull request. A person reviews and merges it.
 
 To check against your own account:
 
@@ -180,7 +179,7 @@ uv run pytest
 uv run ruff check . && uv run mypy
 ```
 
-Layout, rules and the repair procedure are in [CLAUDE.md](CLAUDE.md). Secrets, the CI account, the live recorders and releases are in [MAINTAINING.md](MAINTAINING.md).
+The layout and rules are in [CLAUDE.md](CLAUDE.md). The daily check, what to do when the API changes, and releases are in [MAINTAINING.md](MAINTAINING.md).
 
 Requests, parsing, auth and retries are written once and shared by both clients. Only the thin public methods exist twice (`_resources.py` and `_async_resources.py`, `_client.py` and `_async_client.py`), and `tests/test_parity.py` fails if a pair differs in anything but `await`.
 

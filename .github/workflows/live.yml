@@ -26,7 +26,6 @@ jobs:
     permissions:
       contents: read
       issues: write
-      actions: write # upsert-issue.sh starts repair.yml for a new issue
     env:
       BELI_EMAIL: ${{ secrets.BELI_CI_EMAIL }}
       BELI_PASSWORD: ${{ secrets.BELI_CI_PASSWORD }}
