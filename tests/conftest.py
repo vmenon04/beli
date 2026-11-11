@@ -202,7 +202,17 @@ API_HOSTS = {
 
 
 @pytest.fixture(autouse=True)
-def _isolate_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+def _isolate_env(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+) -> None:
+    """Keep unit tests away from real credentials, the real session file and real waiting.
+
+    Live tests are left alone: they need the saved session, and without a
+    working ``time.sleep`` they would hit the API with no pause between
+    requests and no backoff on retries.
+    """
+    if request.node.get_closest_marker("live"):
+        return
     for var in ("BELI_EMAIL", "BELI_PHONE", "BELI_PASSWORD", "BELI_REFRESH_TOKEN"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("BELI_SESSION_FILE", str(tmp_path / "session.json"))
