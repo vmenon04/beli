@@ -47,7 +47,7 @@ beli logout
 ```python
 from beli import Beli
 
-with Beli.from_session() as beli:          # the session saved by `beli login`
+with Beli.from_session() as beli:  # the session saved by `beli login`
     for r in beli.rankings.list("RES", sort="score")[:10]:
         print(f"{r.score:.1f}  {r.business.name}")
 
