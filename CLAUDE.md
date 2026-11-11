@@ -61,4 +61,4 @@ All four must pass before every commit.
 
 ## When the API changes
 
-See "When an `api-drift` issue shows up" in `MAINTAINING.md`. Keep every request a GET: if a fix seems to need a write, stop and say so.
+See "When Beli changes its API" in `MAINTAINING.md`. Keep every request a GET: if a fix seems to need a write, stop and say so.
