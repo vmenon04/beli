@@ -48,7 +48,8 @@ beli-export*
 *.swp
 *.swo
 *~
-.claude/settings.local.json
+.claude/
+CLAUDE.md
 
 # Operating system files
 .DS_Store
