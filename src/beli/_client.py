@@ -30,6 +30,11 @@ class Beli:
     / ``BELI_PASSWORD`` / ``BELI_REFRESH_TOKEN``, then ``session_file`` if given.
     Nothing touches the network until the first call.
 
+    Before the first request to the main API the client asks Beli which hosts
+    to use (``/api/api-hosts/``) and remembers the answer for its lifetime. If
+    that fails it uses the built-in hosts. ``discover_hosts=False`` skips the
+    question.
+
         with Beli(email="you@example.com", password="...") as beli:
             for r in beli.rankings.list():
                 print(r.score, r.business.name)
@@ -48,6 +53,7 @@ class Beli:
         max_retries: int = 4,
         timeout: float = 30.0,
         user_agent: str | None = None,
+        discover_hosts: bool = True,
         http_client: httpx.Client | None = None,
     ) -> None:
         config = Config.build(
@@ -61,6 +67,7 @@ class Beli:
             max_retries=max_retries,
             timeout=timeout,
             user_agent=user_agent,
+            discover_hosts=discover_hosts,
         )
         self._transport = SyncTransport(config, http_client)
         self.rankings = Rankings(self._transport)
@@ -102,6 +109,8 @@ class Beli:
         self, path: str, *, params: dict[str, Any] | None = None, host: str | None = None
     ) -> Any:
         """GET any endpoint from beli-api-spec. ``{me}`` in the path or a param value is your user id.
+
+        ``host`` is ``"api"`` (the default), ``"onboard"``, ``"recs"`` or a full base URL.
 
         beli.get("/api/user-field-count/{me}/RANK/")
         """

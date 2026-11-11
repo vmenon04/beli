@@ -15,7 +15,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, TypeAdapter
 
-from ._constants import GUIDE_FLAGS, HOST_ONBOARD, NOTES_FIELD
+from ._constants import GUIDE_FLAGS, NOTES_FIELD
 from ._session import Request
 from .models import (
     Bookmark,
@@ -73,7 +73,7 @@ def as_int(data: Any) -> int:
 
 
 def me() -> Request[User]:
-    return Request("GET", "/api/user/logged-in/", host=HOST_ONBOARD, parse=one(User))
+    return Request("GET", "/api/user/logged-in/", host="onboard", parse=one(User))
 
 
 def member(user_id: str) -> Request[User]:

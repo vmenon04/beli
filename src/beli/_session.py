@@ -18,7 +18,9 @@ behave differently.
 
 from __future__ import annotations
 
+import logging
 import os
+import re
 import time
 from collections.abc import Callable, Generator, Mapping
 from dataclasses import dataclass, field
@@ -29,10 +31,18 @@ from typing import Any, Generic, TypeVar
 import httpx
 
 from ._auth import Tokens, is_expired, save_tokens
-from ._constants import DEFAULT_USER_AGENT, HOST_API, HOST_ONBOARD, ORIGIN
+from ._constants import (
+    DEFAULT_USER_AGENT,
+    DISCOVERED_HOSTS,
+    FALLBACK_HOSTS,
+    HOSTS_PATH,
+    ORIGIN,
+)
 from .errors import APIError, AuthenticationError, error_for
 
 T = TypeVar("T")
+
+log = logging.getLogger("beli")
 
 RETRY_STATUSES = frozenset({429, 502, 503, 504})
 
@@ -46,12 +56,16 @@ def _identity(data: Any) -> Any:
 
 @dataclass(frozen=True)
 class Request(Generic[T]):
-    """One read of the API: where to GET and how to parse the answer."""
+    """One read of the API: where to GET and how to parse the answer.
+
+    ``host`` is a service name (``"api"``, ``"onboard"`` or ``"recs"``), which
+    the session maps to a base URL, or a full base URL to use as given.
+    """
 
     method: str
     path: str
     params: Mapping[str, Any] | None = None
-    host: str = HOST_API
+    host: str = "api"
     parse: Callable[[Any], T] = field(default=_identity)
 
 
@@ -116,6 +130,7 @@ class Config:
     max_retries: int = 4
     timeout: float = 30.0
     user_agent: str = DEFAULT_USER_AGENT
+    discover_hosts: bool = True
 
     @classmethod
     def build(
@@ -131,6 +146,7 @@ class Config:
         max_retries: int,
         timeout: float,
         user_agent: str | None,
+        discover_hosts: bool = True,
     ) -> Config:
         from ._auth import load_tokens
 
@@ -153,6 +169,7 @@ class Config:
             max_retries=max_retries,
             timeout=timeout,
             user_agent=user_agent or DEFAULT_USER_AGENT,
+            discover_hosts=discover_hosts,
         )
 
     def headers(self) -> dict[str, str]:
@@ -209,12 +226,37 @@ def _auth_failure(response: httpx.Response, what: str) -> AuthenticationError:
     return AuthenticationError(f"{what} failed (HTTP {response.status_code}): {detail}")
 
 
+_HOST = re.compile(r"(?:https://)?([A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?(?::\d+)?)/?")
+
+
+def parse_hosts(data: Any) -> dict[str, str]:
+    """Pick the base URLs this package uses out of an api-hosts response.
+
+    Tokens are sent to whatever this returns, so a value is used only if it is
+    a bare host name or an ``https://`` origin with no path. Anything else is
+    skipped and the hard-coded host stays in place.
+    """
+    found: dict[str, str] = {}
+    if not isinstance(data, dict):
+        return found
+    for key, service in DISCOVERED_HOSTS.items():
+        value = data.get(key)
+        if not isinstance(value, str):
+            continue
+        match = _HOST.fullmatch(value.strip())
+        if match:
+            found[service] = "https://" + match.group(1)
+    return found
+
+
 class Session:
     """Auth state and request logic for one client, as flows."""
 
     def __init__(self, config: Config) -> None:
         self.config = config
         self._user_id: str | None = None
+        self.hosts = dict(FALLBACK_HOSTS)
+        self._hosts_known = not config.discover_hosts
 
     # Flows the transports expose
 
@@ -239,15 +281,14 @@ class Session:
         """Send one request with auth, pacing and retries, and parse the answer."""
         if request.method != "GET":
             raise ValueError(f"beli is read-only; refusing {request.method} {request.path}")
+        token = yield from self.access_token()
+        base_url = yield from self._base_url(request.host, token)
         reauthed = False
         attempt = 0
         while True:
             token = yield from self.access_token()
             reply = yield Call(
-                "GET",
-                request.host + request.path,
-                params=request.params,
-                headers={**self.config.headers(), "Authorization": f"Bearer {token}"},
+                "GET", base_url + request.path, params=request.params, headers=self._headers(token)
             )
             if isinstance(reply, httpx.TransportError):
                 if attempt >= self.config.max_retries:
@@ -284,10 +325,37 @@ class Session:
             except APIError as exc:
                 error = exc
 
+    def _headers(self, token: str) -> dict[str, str]:
+        return {**self.config.headers(), "Authorization": f"Bearer {token}"}
+
+    def _base_url(self, host: str, token: str) -> Flow[str]:
+        if host not in self.hosts:
+            return host.rstrip("/")
+        # Nothing in the discovery response names the onboarding host.
+        if host != "onboard" and not self._hosts_known:
+            yield Exclusive(self._discover_hosts(token))
+        return self.hosts[host]
+
     # Run under the auth lock
 
+    def _discover_hosts(self, token: str) -> Flow[None]:
+        """Ask the API which hosts to use. Tried once per client; any failure keeps the fallbacks."""
+        if self._hosts_known:
+            return
+        reply = yield Call("GET", self.hosts["api"] + HOSTS_PATH, headers=self._headers(token))
+        found: dict[str, str] = {}
+        if isinstance(reply, httpx.Response) and reply.status_code == 200:
+            found = parse_hosts(decode(reply))
+        self.hosts.update(found)
+        self._hosts_known = True
+        if found:
+            log.debug("hosts discovered from %s: %s", HOSTS_PATH, found)
+        else:
+            log.debug("host discovery gave nothing usable; keeping the built-in hosts")
+
     def _auth_post(self, path: str, body: dict[str, str]) -> Flow[httpx.Response]:
-        reply = yield Call("POST", HOST_ONBOARD + path, json=body, headers=self.config.headers())
+        url = self.hosts["onboard"] + path
+        reply = yield Call("POST", url, json=body, headers=self.config.headers())
         if isinstance(reply, httpx.TransportError):
             raise reply
         response: httpx.Response = reply
