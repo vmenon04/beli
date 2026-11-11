@@ -129,20 +129,20 @@ def rankings(
 ) -> Request[list[Ranking]]:
     """A user's rankings in one category, in the order the API returns them.
 
-    TODO(live): the order of /api/get-ranking/ has not been checked against a
-    real account. ``tests/test_live.py::test_ranking_order`` must confirm:
+    ``tests/test_live.py::test_ranking_order`` confirmed on a real account
+    (2026-11-11) that /api/get-ranking/ answers best first: no row has a
+    higher score than the row before it.
 
-    1. whether the rows already come back best first, i.e. in the user's own
-       rank order, or in some other order (creation time, id);
-    2. how places with the same score are ordered. Beli can show several
-       places at one score, and the user's order among them is only
-       recoverable if the API's order is the rank order.
+    TODO(live): how places with the same score are ordered is still unknown,
+    because that account had no tied scores. Beli can show several places at
+    one score, and the user's order among them is only recoverable if the
+    API's order is the rank order. The same test answers this when run on an
+    account that has ties.
 
-    Until that is known, nothing here reorders the response unless asked to
-    with ``sort="score"``, and that sort is stable so it cannot lose whatever
-    the API's order means for ties. ``Export.rated_places`` numbers ranks with
-    the same stable sort. If (1) turns out true, the sort is redundant and
-    ``rank`` can simply be the row's position.
+    Until then nothing here reorders the response unless asked to with
+    ``sort="score"``, and that sort is stable so it cannot lose whatever the
+    API's order means for ties. ``Export.rated_places`` numbers ranks with
+    the same stable sort.
     """
     if sort is not None and sort not in get_args(RankingSort):
         raise ValueError(f"Unknown sort {sort!r}; use one of {get_args(RankingSort)} or None")

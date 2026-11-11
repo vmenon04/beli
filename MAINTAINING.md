@@ -70,7 +70,7 @@ Then:
 2. Read every file in `tests/fixtures/`. The scrubber replaces all free text, ids, URLs, coordinates and dates, and refuses to write if it can still find an original value. It keeps scores, counts, prices and field names. Make sure nothing you see identifies the account.
 3. `uv run pytest`. Two tests that were skipped now run: they replay the export from the fixtures and scan them for anything recognisable.
 4. Commit shapes and fixtures separately.
-5. Note what `test_ranking_order` said and update the TODO on `rankings()` in `src/beli/_endpoints.py`: does the API return rankings best first, and how are ties ordered?
+5. Note what `test_ranking_order` said and update the TODO on `rankings()` in `src/beli/_endpoints.py`. Best first is confirmed; what is still open is how places with the same score are ordered, which needs an account with ties.
 6. Run the "Live API check" workflow by hand once (Actions → Live API check → Run workflow) and confirm it passes.
 
 `unset BELI_SESSION_FILE` when you are done, or your own `beli` commands will use the CI account.
