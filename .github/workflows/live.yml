@@ -53,7 +53,7 @@ jobs:
 
       - name: Install
         if: steps.guard.outputs.run == 'true'
-        run: uv sync --group dev
+        run: uv sync --locked --group dev
 
       # Saves tokens to $BELI_SESSION_FILE, which the next two steps reuse.
       # Output is discarded: a failed login echoes the server's reply.
