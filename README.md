@@ -146,8 +146,7 @@ A private API changes without warning, so the repository watches for it:
 
 - The unit tests run against mocked responses and never touch the network.
 - A daily workflow logs in with a throwaway account, runs the live tests, and compares the shape of every response the exporter reads (field names and JSON types, no values) with the shapes stored in `tests/shapes/`. A difference opens an `api-drift` issue with the diff.
-- A weekly workflow compares the two upstream specs with `tests/upstream/` for the endpoints used here and opens an `upstream-change` issue if they moved.
-- Either issue starts a workflow that proposes a fix as a pull request. A person reviews and merges it.
+- The issue starts a workflow that proposes a fix as a pull request. A person reviews and merges it.
 
 To check against your own account:
 

@@ -8,8 +8,7 @@ What has to be set up once, what runs by itself afterwards, and what to do when 
 |---|---|---|
 | `ci.yml` | every push and PR | ruff, mypy, pytest on Python 3.10 to 3.13. No network. |
 | `live.yml` | daily, 10:23 UTC, or by hand | Logs in with the CI account, runs `pytest -m live` and `snapshot_shapes.py --check`. On failure opens or updates the `api-drift` issue. |
-| `upstream.yml` | Mondays, 09:41 UTC, or by hand | Runs `check_upstream.py`. On a change opens or updates the `upstream-change` issue. |
-| `repair.yml` | when either issue is first opened, when you put one of the two labels on an issue, or by hand | Has an agent propose a fix on `repair/issue-N` and opens a pull request. Never merges. |
+| `repair.yml` | when an `api-drift` issue is first opened, when you put that label on an issue, or by hand | Has an agent propose a fix on `repair/issue-N` and opens a pull request. Never merges. |
 | `release.yml` | on a `v*` tag | Builds and publishes to PyPI. |
 
 `live.yml` does nothing until the two Beli secrets exist, and `repair.yml` fails fast without its API key, so nothing below is urgent. Until `tests/shapes/` has been recorded (see "First run"), `live.yml` reports every endpoint as having no stored shape.
@@ -47,7 +46,7 @@ PyPI needs no secret: `release.yml` uses trusted publishing through the `pypi` e
 - **Settings → Environments → pypi:** add yourself as a required reviewer. A tag then cannot publish without your approval, whoever or whatever pushed it.
 - **Settings → Rules → Rulesets:** protect `main` (require a pull request) and restrict who can create `v*` tags to yourself.
 
-The labels `api-drift` and `upstream-change` are created by the workflows the first time they are needed.
+The `api-drift` label is created by the workflow the first time it is needed.
 
 ## First run
 
@@ -87,8 +86,6 @@ All of these read only. Requests are spaced two seconds apart by default; change
 | `uv run python scripts/snapshot_shapes.py --check` | a session | Compares live response shapes with `tests/shapes/`. Exit 1 and a diff if they differ. |
 | `uv run python scripts/snapshot_shapes.py` | a session | Rewrites `tests/shapes/`. |
 | `uv run python scripts/record_fixtures.py` | a session | Rewrites `tests/fixtures/`, scrubbed. |
-| `uv run python scripts/check_upstream.py` | internet (GitHub only) | Compares the upstream specs with `tests/upstream/`. |
-| `uv run python scripts/check_upstream.py --update` | internet (GitHub only) | Accepts the current upstream specs. |
 
 Which account a command uses follows the client's precedence: the session file (`BELI_SESSION_FILE`, else `~/.config/beli/session.json`) if it holds a live token, otherwise `BELI_EMAIL` / `BELI_PASSWORD` or `BELI_REFRESH_TOKEN` from the environment. Shapes recorded from your own account will not match the CI account's, so always record with the CI account.
 
@@ -103,10 +100,6 @@ The body says which of login, live tests and shapes failed. A new issue also sta
 - **Shape diffs or validation errors:** a real change. Review the repair pull request, or fix it yourself following "Repair procedure" in `CLAUDE.md`.
 
 The issue is updated in place each day while the check keeps failing. Close it when `live.yml` passes again; a later failure opens a new one.
-
-### `upstream-change`
-
-Someone corrected one of the specs. Read the diff, decide whether it matters, and either merge the repair pull request or run `check_upstream.py --update` yourself to accept the new baseline. Then close the issue.
 
 ### Reviewing a repair pull request
 

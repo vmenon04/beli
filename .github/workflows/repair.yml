@@ -1,6 +1,6 @@
 name: Repair
 
-# Proposes a fix for an api-drift or upstream-change issue as a pull request.
+# Proposes a fix for an api-drift issue as a pull request.
 #
 # The agent step can only read and edit files, run the checks, and commit
 # locally. It has no push access and no GitHub CLI. The steps after it, which
@@ -9,9 +9,9 @@ name: Repair
 # workflow merges, tags or publishes, and it has no Beli credentials, so it
 # cannot reach the live API.
 #
-# Runs when one of the two labels is put on an issue by a person, or when
-# live.yml / upstream.yml start it after opening an issue. (Labels applied by
-# a workflow do not trigger other workflows, hence the explicit start.)
+# Runs when the api-drift label is put on an issue by a person, or when
+# live.yml starts it after opening an issue. (Labels applied by a workflow do
+# not trigger other workflows, hence the explicit start.)
 
 on:
   issues:
@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       issue:
-        description: Number of the api-drift or upstream-change issue
+        description: Number of the api-drift issue
         required: true
         type: string
 
@@ -33,8 +33,7 @@ jobs:
   repair:
     if: >
       github.event_name == 'workflow_dispatch' ||
-      github.event.label.name == 'api-drift' ||
-      github.event.label.name == 'upstream-change'
+      github.event.label.name == 'api-drift'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -62,12 +61,12 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/issues/$NUMBER" > "$RUNNER_TEMP/issue.json"
           author=$(jq -r .user.login "$RUNNER_TEMP/issue.json")
           state=$(jq -r .state "$RUNNER_TEMP/issue.json")
-          label=$(jq -r '[.labels[].name] | map(select(. == "api-drift" or . == "upstream-change")) | first // ""' "$RUNNER_TEMP/issue.json")
+          label=$(jq -r '[.labels[].name] | map(select(. == "api-drift")) | first // ""' "$RUNNER_TEMP/issue.json")
           if [ "$author" != "github-actions[bot]" ] && [ "$author" != "$OWNER" ]; then
             echo "::error::issue #$NUMBER was opened by $author, not by the checks or the owner"; exit 1
           fi
           if [ "$state" != open ] || [ -z "$label" ] || jq -e .pull_request "$RUNNER_TEMP/issue.json" > /dev/null; then
-            echo "::error::#$NUMBER is not an open api-drift or upstream-change issue"; exit 1
+            echo "::error::#$NUMBER is not an open api-drift issue"; exit 1
           fi
           if [ "$HAS_KEY" != true ]; then
             echo "::error::the ANTHROPIC_API_KEY secret is not set"; exit 1
@@ -92,7 +91,7 @@ jobs:
             {"includeCoAuthoredBy": false, "attribution": {"commit": "", "pr": ""}}
           claude_args: |
             --max-turns 80
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(uv run ruff:*),Bash(uv run mypy:*),Bash(uv run pytest:*),Bash(uv run python scripts/check_upstream.py:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(uv run ruff:*),Bash(uv run mypy:*),Bash(uv run pytest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*)"
             --disallowedTools "WebFetch,WebSearch"
           prompt: |
             You are repairing the `beli` package after a scheduled check failed.
@@ -103,8 +102,8 @@ jobs:
             Read CLAUDE.md first and follow it exactly, in particular the hard rules
             and the section "Repair procedure". In short:
 
-            - Update models, endpoint builders, `tests/shapes/`, `tests/fixtures/`
-              and `tests/upstream/` so the package matches what the report shows.
+            - Update models, endpoint builders, `tests/shapes/` and
+              `tests/fixtures/` so the package matches what the report shows.
             - The package stays read-only. Do not add any request that is not a GET.
               Do not weaken the read-only guard or its tests.
             - You have no access to the live Beli API and must not try to reach it.
