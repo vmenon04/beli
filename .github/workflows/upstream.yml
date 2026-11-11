@@ -1,0 +1,60 @@
+name: Upstream spec check
+
+# Once a week, compares the two community OpenAPI specs with the baselines in
+# tests/upstream/ for the endpoints this package uses. Talks to GitHub only.
+
+on:
+  schedule:
+    - cron: "41 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-spec
+  cancel-in-progress: false
+
+jobs:
+  upstream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --group dev
+
+      # Exit 1 means the specs changed. Exit 2 means one could not be fetched,
+      # which fails the run without opening an issue.
+      - name: Compare with the baselines
+        id: check
+        run: |
+          set +e
+          uv run python scripts/check_upstream.py --report "$RUNNER_TEMP/upstream.md"
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          [ "$code" -eq 0 ] || [ "$code" -eq 1 ]
+
+      - name: Open or update the upstream-change issue
+        if: steps.check.outputs.code == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          body="$RUNNER_TEMP/issue.md"
+          {
+            echo "The upstream API specs changed for endpoints this package uses, as of $(date -u +%Y-%m-%d). [Workflow run]($RUN_URL)."
+            echo
+            echo "Lines with \`-\` are the baseline in \`tests/upstream/\`; lines with \`+\` are upstream now."
+            echo "After acting on a change, accept it with \`python scripts/check_upstream.py --update\`."
+            echo
+            cat "$RUNNER_TEMP/upstream.md"
+          } > "$body"
+          .github/scripts/upsert-issue.sh upstream-change "Upstream Beli API spec changed" "$body"
+
+      - name: Fail the run
+        if: steps.check.outputs.code == '1'
+        run: exit 1
