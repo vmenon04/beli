@@ -96,7 +96,7 @@ If you sign in to Beli with Apple or Google, you will need to capture a refresh 
 
 ## Notes
 
-For now, this implementation is read-only. Requests are also spaced one second apart and retried when Beli asks you to slow down. Future releases may include breaking changes, please check the changelog (CHANGELOG.md) before upgrading.
+For now, this implementation is read-only. Requests are also spaced one second apart and retried when Beli asks you to slow down. Future releases may include breaking changes, please check the changelog ([CHANGELOG.md](CHANGELOG.md)) before upgrading.
 
 ## Development
 
