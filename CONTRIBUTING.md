@@ -86,4 +86,4 @@ I recommend to then updating the fake response in `tests/conftest.py`, run the l
 
 ## Reporting a bug
 
-Open an issue with the version (`pip show beli`), the call you made, and the error type and endpoint. Ensure that you leave out tokens and the response body.
+Open an issue with the version (`pip show beli-client`), the call you made, and the error type and endpoint. Ensure that you leave out tokens and the response body.

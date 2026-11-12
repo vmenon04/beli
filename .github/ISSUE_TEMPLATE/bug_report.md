@@ -16,6 +16,6 @@ labels: bug
 
 **Versions**
 
-- beli: <!-- pip show beli -->
+- beli: <!-- pip show beli-client -->
 - Python:
 - Operating system:

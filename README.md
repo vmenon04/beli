@@ -1,8 +1,8 @@
 # beli
 
 [![CI](https://github.com/vmenon04/beli/actions/workflows/ci.yml/badge.svg)](https://github.com/vmenon04/beli/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/beli)](https://pypi.org/project/beli/)
-[![Python](https://img.shields.io/pypi/pyversions/beli)](https://pypi.org/project/beli/)
+[![PyPI](https://img.shields.io/pypi/v/beli-client)](https://pypi.org/project/beli-client/)
+[![Python](https://img.shields.io/pypi/pyversions/beli-client)](https://pypi.org/project/beli-client/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 Unofficial, read-only Python client and exporter for [Beli](https://beliapp.com), the restaurant ranking app.
@@ -14,10 +14,10 @@ Beli has no public API and no export button. This package reads your rankings, s
 ## Install
 
 ```bash
-pip install beli
+pip install beli-client
 ```
 
-Requires Python 3.10 or newer.
+Requires Python 3.10 or newer. The package installs as `beli-client` and imports as `beli`.
 
 ## Export your data
 

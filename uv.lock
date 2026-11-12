@@ -103,7 +103,7 @@ wheels = [
 ]
 
 [[package]]
-name = "beli"
+name = "beli-client"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },

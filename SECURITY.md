@@ -4,7 +4,7 @@
 
 Please do not open a public issue for a security problem. Report it privately through GitHub: on the repository's **Security** tab, choose **Report a vulnerability**.
 
-Include the version (`pip show beli`), what you found and how to reproduce it. Never include a real token, password or session file.
+Include the version (`pip show beli-client`), what you found and how to reproduce it. Never include a real token, password or session file.
 
 Only the latest release is supported with security fixes.
 
